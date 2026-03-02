@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Paint Tracker - 塗装レシピ管理システム</title>
+    <title>Visual Paint Tracker - 塗装レシピ管理システム (Cloud)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         canvas { user-select: none; -webkit-user-select: none; }
@@ -15,9 +15,25 @@
         .view-section { display: none; }
         .view-section.active { display: block; }
         .view-section.active-flex { display: flex; }
+
+        #authOverlay { backdrop-filter: blur(5px); }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 font-sans pb-16 md:pb-0 md:pt-16">
+
+    <!-- === 登入畫面 (Auth Overlay) === -->
+    <div id="authOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
+        <svg class="w-16 h-16 text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <h1 class="text-3xl font-black mb-2 tracking-wider">PAINT TRACKER</h1>
+        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">CLOUD SYNC SYSTEM V16</p>
+        
+        <button id="googleLoginBtn" class="bg-white text-slate-800 px-6 py-3 rounded-full font-bold shadow-xl hover:bg-slate-100 transition transform hover:scale-105 flex items-center">
+            <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+            Google アカウントでログイン
+        </button>
+        <div id="authLoading" class="hidden mt-4 text-sm text-slate-400 animate-pulse">通信中 (Connecting to Server)...</div>
+        <div id="authError" class="hidden mt-4 text-sm text-red-400 font-bold max-w-sm text-center"></div>
+    </div>
 
     <!-- ナビゲーションバー -->
     <nav class="fixed bottom-0 md:top-0 md:bottom-auto left-0 w-full bg-slate-800 text-slate-300 z-50 shadow-lg flex justify-around md:justify-start">
@@ -46,8 +62,11 @@
         <!-- VIEW 1: 專案列表 (Recipe Management) -->
         <!-- ========================================== -->
         <div id="view-projects" class="view-section active">
-            <div class="bg-white md:rounded-xl shadow-sm p-6 mb-4">
-                <div class="flex justify-between items-center mb-6">
+            <div class="bg-white md:rounded-xl shadow-sm p-6 mb-4 relative overflow-hidden">
+                <div class="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg shadow-sm flex items-center">
+                    <span class="w-2 h-2 rounded-full bg-white animate-pulse mr-1.5"></span> CLOUD SYNC ON
+                </div>
+                <div class="flex justify-between items-center mb-6 mt-2">
                     <h2 class="text-2xl font-bold text-slate-800">塗装プロジェクト一覧</h2>
                     <button id="createNewProjectBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow font-bold flex items-center transition">
                         <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -98,8 +117,9 @@
                         </button>
                         プロジェクト編集
                     </h2>
-                    <button id="saveProjectBtn" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-sm font-bold transition shadow">
-                        保存する
+                    <button id="saveProjectBtn" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-sm font-bold transition shadow flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        クラウド保存
                     </button>
                 </div>
                 <div class="p-4 bg-slate-700">
@@ -214,8 +234,11 @@
         <!-- ========================================== -->
         <!-- VIEW 2: 庫存管理 (Inventory) -->
         <!-- ========================================== -->
-        <div id="view-inventory" class="view-section bg-white md:rounded-xl shadow-lg flex-col min-h-[80vh]">
-            <div class="bg-slate-800 text-white p-4 flex items-center shadow-md md:rounded-t-xl">
+        <div id="view-inventory" class="view-section bg-white md:rounded-xl shadow-lg flex-col min-h-[80vh] relative overflow-hidden">
+            <div class="absolute top-0 right-0 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg shadow-sm flex items-center z-50">
+                <span class="w-2 h-2 rounded-full bg-white animate-pulse mr-1.5"></span> CLOUD SYNC ON
+            </div>
+            <div class="bg-slate-800 text-white p-4 pt-6 md:pt-4 flex items-center shadow-md md:rounded-t-xl">
                 <h2 class="text-xl font-bold flex items-center">ペイントマネージャー (在庫管理)</h2>
             </div>
             
@@ -252,7 +275,10 @@
                 </div>
             </div>
 
-            <div class="flex-grow overflow-y-auto p-4 bg-gray-50 md:rounded-b-xl">
+            <div class="flex-grow overflow-y-auto p-4 bg-gray-50 md:rounded-b-xl relative">
+                <div id="cloudLoadingSpinner" class="hidden absolute inset-0 bg-white bg-opacity-70 z-10 flex items-center justify-center">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
                 <ul id="inventoryListUI" class="space-y-2"></ul>
             </div>
         </div>
@@ -288,7 +314,7 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- VIEW 4: 系統設定 (Settings / 包含免責聲明) -->
+        <!-- VIEW 4: 系統設定 (Settings) -->
         <!-- ========================================== -->
         <div id="view-settings" class="view-section">
             <div class="bg-white md:rounded-xl shadow-lg p-6 max-w-2xl mx-auto">
@@ -296,25 +322,31 @@
                     <svg class="w-6 h-6 mr-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                     システム設定
                 </h2>
+
+                <div class="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg flex justify-between items-center">
+                    <div>
+                        <div class="text-sm text-slate-500 font-bold">ログイン状態</div>
+                        <div id="loginStatusText" class="text-lg font-black text-blue-600">--</div>
+                    </div>
+                    <button id="logoutBtn" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                        ログアウト (Logout)
+                    </button>
+                </div>
                 
                 <div class="space-y-6">
                     <div class="border border-gray-200 rounded-lg p-5">
                         <h3 class="font-bold text-gray-800 mb-2">データのバックアップ (JSON)</h3>
-                        <p class="text-sm text-gray-500 mb-4">在庫やプロジェクトのデータをファイルに保存します。端末変更時などに利用してください。</p>
+                        <p class="text-sm text-gray-500 mb-4">現在のクラウドデータをファイルに書き出します。</p>
                         <div class="flex space-x-3">
                             <button id="exportBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
                                 エクスポート (書き出し)
                             </button>
-                            <label class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm font-bold shadow transition cursor-pointer">
-                                インポート (読み込み)
-                                <input type="file" id="importFile" accept=".json" class="hidden">
-                            </label>
                         </div>
                     </div>
 
                     <div class="border border-red-200 rounded-lg p-5 bg-red-50">
                         <h3 class="font-bold text-red-700 mb-2">初期化 (Danger Zone)</h3>
-                        <p class="text-sm text-red-600 mb-4">保存されているデータをすべて消去します。この操作は元に戻せません。</p>
+                        <p class="text-sm text-red-600 mb-4">クラウド上のデータをすべて消去します。この操作は元に戻せません。</p>
                         <div class="flex space-x-3">
                             <button id="resetProjectsBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
                                 プロジェクト履歴を消去
@@ -343,16 +375,48 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- JavaScript Logic -->
+    <!-- JavaScript Logic (Firebase V10 Modular)  -->
     <!-- ========================================== -->
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js"; // 1. 導入 Analytics 模組
+
+        // ======================================================================
+        // ⚠️【Firebase Config エリア】
+        // ======================================================================
+        const firebaseConfig = {
+          apiKey: "AIzaSyCaGPbVVMCHFR3FsMNNKKatPZe4fDFb7_o",
+          authDomain: "paint-tracker-61b0f.firebaseapp.com",
+          projectId: "paint-tracker-61b0f",
+          storageBucket: "paint-tracker-61b0f.firebasestorage.app",
+          messagingSenderId: "448149747303",
+          appId: "1:448149747303:web:3442224383db6b282b06c2",
+          measurementId: "G-9G3L8HVWPG"
+        };
+        // ======================================================================
+
+        let app, auth, db, analytics;
+        
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            analytics = getAnalytics(app); // 初始化 Analytics
+        } catch(e) {
+            console.error("Firebase初期化エラー。", e);
+        }
+
+        let userUid = null;
+        let isCloudSynced = false;
+
         // === 0. Global Utilities ===
         function generateUid() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
 
-        // === 1. State Management (EEPROM & ROM) ===
+        // === 1. ROM (Master Paint DB - 2500+ Items) ===
         const masterPaintDB = [];
 
-        // 數據壓縮陣列 (Data Compression Payload) - 涵蓋 GSI, TAMIYA, GAIA NOTES 全系列 (V14 Final)
         const compressedDB = [
             // ----- GSI CREOS 特殊系列 -----
             { brand: "GSIクレオス", series: "リトルアーモリーカラー", type: "ラッカー", prefix: "LAC", data: "101:アルマイトブラック|102:パーカーガンメタリック|103:ステンレスシルバー|104:ガンブルーメタリック|105:フラットダークアース1|106:フラットダークアース2" },
@@ -476,70 +540,192 @@
             { brand: "ガイアノーツ", series: "NAZCA メカサフ", type: "ラッカー/サフ", prefix: "NP-", data: "001:メカサフ ヘヴィ|002:メカサフ ライト|004:メカサフ スーパーヘヴィ|005:メカサフ ピンク" }
         ];
 
-        // 啟動時自動解壓縮並合併至 masterPaintDB (Initialization Sequence)
+        // ROM初期化 (解凍処理)
         compressedDB.forEach(group => {
             const items = group.data.split('|');
             items.forEach(item => {
                 const [num, name] = item.split(':');
                 const suffix = group.suffix || '';
                 const fullId = group.prefix + num;
-                
                 if (!masterPaintDB.some(p => p.brand === group.brand && p.id === fullId)) {
-                    masterPaintDB.push({
-                        brand: group.brand,
-                        series: group.series,
-                        id: fullId,
-                        name: name + suffix,
-                        type: group.type,
-                        ref: "" 
-                    });
+                    masterPaintDB.push({ brand: group.brand, series: group.series, id: fullId, name: name + suffix, type: group.type, ref: "" });
                 }
             });
         });
 
+        // 状態変数 (RAM)
         let myPaintInventory = [];
         let myProjects = [];
+        let searchStats = { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } };
         let currentEditingProjectId = null; 
+        let isSyncing = false; // Firestoreからの読み込み中は上書き保存を防止するフラグ
 
-        // 検索頻度（学習用統計データ）
-        let searchStats = {
-            project: { maker: {}, grade: {} },
-            inventory: { maker: {}, type: {} }
-        };
+        // === 2. Auth & Cloud Sync (SCADA 連携) ===
 
-        function loadData() {
-            try {
-                const savedInv = localStorage.getItem('myPaintInventoryV3');
-                if (savedInv) {
-                    myPaintInventory = JSON.parse(savedInv);
-                    // Data Migration 
-                    myPaintInventory.forEach(item => {
-                        const master = masterPaintDB.find(m => m.id === item.id && m.brand === item.brand && m.type === item.type);
-                        if (!item.type) item.type = master ? master.type : "その他";
-                        if (!item.series) item.series = master ? master.series : "";
-                        if (!item.ref) item.ref = master ? master.ref : "";
-                    });
+        // Google ログイン処理 (null チェック追加)
+        const loginBtn = document.getElementById('googleLoginBtn');
+        if(loginBtn) {
+            loginBtn.addEventListener('click', () => {
+                const authLoading = document.getElementById('authLoading');
+                const authError = document.getElementById('authError');
+                
+                // エラーメッセージをクリア
+                if(authError) {
+                    authError.classList.add('hidden');
+                    authError.textContent = '';
+                }
+
+                if(!auth) { 
+                    if(authError) {
+                        authError.textContent = "Firebaseの設定が見つかりません。ソースコードの構成(Config)を確認してください。";
+                        authError.classList.remove('hidden');
+                    }
+                    return; 
+                }
+                
+                if(authLoading) authLoading.classList.remove('hidden');
+                
+                const provider = new GoogleAuthProvider();
+                signInWithPopup(auth, provider).catch(err => {
+                    console.error("Login Error:", err);
+                    if(authLoading) authLoading.classList.add('hidden');
+                    
+                    if(authError) {
+                        if(err.code === 'auth/configuration-not-found') {
+                            authError.textContent = "Firebaseの設定エラー: プロジェクトIDが間違っているか、Identity Platformの設定が未完了です。Firebase Consoleを確認してください。";
+                        } else {
+                            authError.textContent = `ログインエラー: ${err.message}`;
+                        }
+                        authError.classList.remove('hidden');
+                    }
+                });
+            });
+        }
+
+        // ログアウト処理 (null チェック追加)
+        const logoutBtn = document.getElementById('logoutBtn');
+        if(logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                if(auth) signOut(auth);
+            });
+        }
+
+        // 認証状態の監視 (Auth Listener)
+        if(auth) {
+            onAuthStateChanged(auth, (user) => {
+                const overlay = document.getElementById('authOverlay');
+                const loginStatusText = document.getElementById('loginStatusText');
+                
+                if (user) {
+                    userUid = user.uid;
+                    if(loginStatusText) loginStatusText.textContent = user.displayName || "認証済み";
+                    if(overlay) {
+                        overlay.classList.add('opacity-0');
+                        setTimeout(() => overlay.style.display = 'none', 500);
+                    }
+                    
+                    // ローカルからクラウドへの移行処理 (初回のみ)
+                    migrateLocalToCloud();
+                    
+                    // クラウドDBの監視開始
+                    startCloudSync();
+                } else {
+                    userUid = null;
+                    if(loginStatusText) loginStatusText.textContent = "未ログイン";
+                    if(overlay) {
+                        overlay.style.display = 'flex';
+                        setTimeout(() => overlay.classList.remove('opacity-0'), 50);
+                    }
+                }
+            });
+        }
+
+        // データ移行 (LocalSRAM -> CloudDB)
+        function migrateLocalToCloud() {
+            const localInv = localStorage.getItem('myPaintInventoryV3');
+            const localProj = localStorage.getItem('myProjectsV1');
+            const localStats = localStorage.getItem('paintTrackerStatsV1');
+
+            if (localInv || localProj || localStats) {
+                console.log("ローカルデータを検出しました。クラウドへ移行します...");
+                if (localInv) myPaintInventory = JSON.parse(localInv);
+                if (localProj) myProjects = JSON.parse(localProj);
+                if (localStats) searchStats = JSON.parse(localStats);
+                
+                saveInventory();
+                saveProjects();
+                saveStats();
+
+                localStorage.removeItem('myPaintInventoryV3');
+                localStorage.removeItem('myProjectsV1');
+                localStorage.removeItem('paintTrackerStatsV1');
+                console.log("クラウド移行完了");
+            }
+        }
+
+        // クラウドDBの監視 (Firestore onSnapshot)
+        function startCloudSync() {
+            if (!userUid || !db) return;
+
+            const spinner = document.getElementById('cloudLoadingSpinner');
+            if(spinner) spinner.classList.remove('hidden');
+
+            // 在庫データの監視
+            onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), (docSnap) => {
+                isSyncing = true;
+                if (docSnap.exists()) {
+                    myPaintInventory = docSnap.data().items || [];
                 } else {
                     myPaintInventory = [];
                 }
-            } catch (e) { myPaintInventory = []; }
+                renderInventoryList();
+                renderDashboard();
+                updateInvFilterOptions();
+                isSyncing = false;
+                if(spinner) spinner.classList.add('hidden');
+            }, (error) => {
+                console.error("同期エラー:", error);
+                if(spinner) spinner.classList.add('hidden');
+            });
 
-            try {
-                const savedProj = localStorage.getItem('myProjectsV1');
-                if (savedProj) myProjects = JSON.parse(savedProj);
-            } catch (e) { myProjects = []; }
+            // プロジェクトデータの監視
+            onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), (docSnap) => {
+                isSyncing = true;
+                if (docSnap.exists()) {
+                    myProjects = docSnap.data().items || [];
+                } else {
+                    myProjects = [];
+                }
+                renderProjectList();
+                isSyncing = false;
+            });
 
-            try {
-                const savedStats = localStorage.getItem('paintTrackerStatsV1');
-                if (savedStats) searchStats = JSON.parse(savedStats);
-            } catch (e) { console.warn('Stats loading failed'); }
+            // 統計データの監視
+            onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), (docSnap) => {
+                isSyncing = true;
+                if (docSnap.exists()) {
+                    searchStats = docSnap.data().data || { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } };
+                }
+                isSyncing = false;
+            });
         }
 
-        function saveInventory() { localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory)); }
-        function saveProjects() { try { localStorage.setItem('myProjectsV1', JSON.stringify(myProjects)); } catch (e) { alert("データの保存に失敗しました。"); } }
-        function saveStats() { localStorage.setItem('paintTrackerStatsV1', JSON.stringify(searchStats)); }
+        // === 3. クラウドへの書き込み処理 (Cloud Write) ===
+        function saveInventory() { 
+            if(isSyncing || !userUid || !db) return;
+            setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), { items: myPaintInventory }); 
+        }
+        function saveProjects() { 
+            if(isSyncing || !userUid || !db) return;
+            setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), { items: myProjects }); 
+        }
+        function saveStats() { 
+            if(isSyncing || !userUid || !db) return;
+            setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), { data: searchStats }); 
+        }
 
-        // === 2. 検索頻度学習ロジック (Machine Learning Shortcut) ===
+        // === 以下、既存のUIロジック ===
+
         function trackSearch(context, category, value) {
             if (!value || value === 'ALL') return;
             if (!searchStats[context][category][value]) searchStats[context][category][value] = 0;
@@ -551,6 +737,7 @@
         function renderQuickFilters(context) {
             const containerId = context === 'project' ? 'projectQuickFilters' : 'invQuickFilters';
             const container = document.getElementById(containerId);
+            if(!container) return;
             container.innerHTML = '';
 
             let topTermsPerCategory = [];
@@ -584,16 +771,15 @@
         window.applyQuickFilter = function(context, category, value) {
             if (context === 'project') {
                 const selectId = category === 'maker' ? 'filterMaker' : 'filterGrade';
-                document.getElementById(selectId).value = value;
-                renderProjectList();
+                const el = document.getElementById(selectId);
+                if(el) { el.value = value; renderProjectList(); }
             } else if (context === 'inventory') {
                 const selectId = category === 'maker' ? 'invFilterMaker' : 'invFilterType';
-                document.getElementById(selectId).value = value;
-                renderInventoryList();
+                const el = document.getElementById(selectId);
+                if(el) { el.value = value; renderInventoryList(); }
             }
         };
 
-        // === 3. Navigation ===
         const navBtns = document.querySelectorAll('.nav-btn');
         const viewSections = document.querySelectorAll('.view-section');
 
@@ -617,23 +803,27 @@
         }
         navBtns.forEach(btn => btn.addEventListener('click', (e) => switchView(e.currentTarget.dataset.target)));
 
-        // === 4. Dashboard Logic ===
         function renderDashboard() {
             const ownedItems = myPaintInventory.filter(p => p.status === '所持' && p.qty > 0);
             const totalQty = ownedItems.reduce((sum, item) => sum + item.qty, 0);
             const totalKinds = ownedItems.length;
             const wishlistItems = myPaintInventory.filter(p => p.status === '欲しい').length;
 
-            document.getElementById('statTotalQty').innerHTML = `${totalQty} <span class="text-base font-normal">本</span>`;
-            document.getElementById('statTotalKinds').innerHTML = `${totalKinds} <span class="text-base font-normal">種</span>`;
-            document.getElementById('statWishlist').innerHTML = `${wishlistItems} <span class="text-base font-normal">種</span>`;
-
-            const brandCounts = ownedItems.reduce((acc, item) => { acc[item.brand] = (acc[item.brand] || 0) + item.qty; return acc; }, {});
+            const statTotalQtyEl = document.getElementById('statTotalQty');
+            const statTotalKindsEl = document.getElementById('statTotalKinds');
+            const statWishlistEl = document.getElementById('statWishlist');
             const container = document.getElementById('brandStatsContainer');
+
+            if(statTotalQtyEl) statTotalQtyEl.innerHTML = `${totalQty} <span class="text-base font-normal">本</span>`;
+            if(statTotalKindsEl) statTotalKindsEl.innerHTML = `${totalKinds} <span class="text-base font-normal">種</span>`;
+            if(statWishlistEl) statWishlistEl.innerHTML = `${wishlistItems} <span class="text-base font-normal">種</span>`;
+
+            if(!container) return;
             container.innerHTML = '';
 
             if (totalQty === 0) { container.innerHTML = '<p class="text-sm text-gray-500 italic">データがありません。</p>'; return; }
 
+            const brandCounts = ownedItems.reduce((acc, item) => { acc[item.brand] = (acc[item.brand] || 0) + item.qty; return acc; }, {});
             Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).forEach(([brand, count]) => {
                 const percentage = Math.round((count / totalQty) * 100);
                 let barColor = 'bg-slate-500';
@@ -650,12 +840,13 @@
             });
         }
 
-        // === 5. Project Management Logic ===
         const projectGrid = document.getElementById('projectGrid');
         
         function updateProjectFilterOptions() {
             const filterMaker = document.getElementById('filterMaker');
             const filterGrade = document.getElementById('filterGrade');
+            if(!filterMaker || !filterGrade) return;
+
             const currentMaker = filterMaker.value; const currentGrade = filterGrade.value;
             const uniqueMakers = [...new Set(myProjects.map(p => p.maker))].filter(Boolean).sort();
             const uniqueGrades = [...new Set(myProjects.map(p => p.grade))].filter(Boolean).sort();
@@ -669,17 +860,24 @@
             if (uniqueGrades.includes(currentGrade)) filterGrade.value = currentGrade;
         }
 
-        document.getElementById('filterMaker').addEventListener('change', (e) => { trackSearch('project', 'maker', e.target.value); renderProjectList(); });
-        document.getElementById('filterGrade').addEventListener('change', (e) => { trackSearch('project', 'grade', e.target.value); renderProjectList(); });
-        document.getElementById('filterName').addEventListener('input', renderProjectList);
+        const filterMakerEl = document.getElementById('filterMaker');
+        if(filterMakerEl) filterMakerEl.addEventListener('change', (e) => { trackSearch('project', 'maker', e.target.value); renderProjectList(); });
+        
+        const filterGradeEl = document.getElementById('filterGrade');
+        if(filterGradeEl) filterGradeEl.addEventListener('change', (e) => { trackSearch('project', 'grade', e.target.value); renderProjectList(); });
+        
+        const filterNameEl = document.getElementById('filterName');
+        if(filterNameEl) filterNameEl.addEventListener('input', renderProjectList);
 
         function renderProjectList() {
             updateProjectFilterOptions(); renderQuickFilters('project');
-            const makerFilterVal = document.getElementById('filterMaker').value;
-            const gradeFilterVal = document.getElementById('filterGrade').value;
-            const nameFilterVal = document.getElementById('filterName').value.toLowerCase();
+            const makerFilterVal = document.getElementById('filterMaker')?.value || 'ALL';
+            const gradeFilterVal = document.getElementById('filterGrade')?.value || 'ALL';
+            const nameFilterVal = document.getElementById('filterName')?.value.toLowerCase() || '';
 
+            if(!projectGrid) return;
             projectGrid.innerHTML = '';
+
             const filteredProjects = myProjects.filter(proj => {
                 return (makerFilterVal === 'ALL' || proj.maker === makerFilterVal) && 
                        (gradeFilterVal === 'ALL' || proj.grade === gradeFilterVal) && 
@@ -709,39 +907,80 @@
             });
         }
 
-        // === 6. Editor Logic ===
-        document.getElementById('createNewProjectBtn').addEventListener('click', () => {
-            currentEditingProjectId = generateUid();
-            document.getElementById('maker').selectedIndex = 0; document.getElementById('grade').selectedIndex = 0;
-            document.getElementById('customMaker').value = ''; document.getElementById('customMaker').classList.add('hidden');
-            document.getElementById('customGrade').value = ''; document.getElementById('customGrade').classList.add('hidden');
-            document.getElementById('projectName').value = ''; document.getElementById('imageLoader').value = '';
-            uploadedImage = new Image(); markers = [];
-            document.getElementById('paintCanvas').classList.add('hidden'); document.getElementById('placeholderText').classList.remove('hidden');
-            document.getElementById('canvasContainer').classList.add('p-6'); document.getElementById('downloadBtn').classList.add('hidden');
-            updateProjectBomList(); switchView('view-project-edit');
-        });
-        document.getElementById('backToProjectsBtn').addEventListener('click', () => switchView('view-projects'));
-        document.getElementById('maker').addEventListener('change', function(e) { document.getElementById('customMaker').classList.toggle('hidden', e.target.value !== 'その他'); });
-        document.getElementById('grade').addEventListener('change', function(e) { document.getElementById('customGrade').classList.toggle('hidden', e.target.value !== 'その他'); });
+        const createNewProjectBtn = document.getElementById('createNewProjectBtn');
+        if(createNewProjectBtn) {
+            createNewProjectBtn.addEventListener('click', () => {
+                currentEditingProjectId = generateUid();
+                document.getElementById('maker').selectedIndex = 0; document.getElementById('grade').selectedIndex = 0;
+                document.getElementById('customMaker').value = ''; document.getElementById('customMaker').classList.add('hidden');
+                document.getElementById('customGrade').value = ''; document.getElementById('customGrade').classList.add('hidden');
+                document.getElementById('projectName').value = ''; document.getElementById('imageLoader').value = '';
+                uploadedImage = new Image(); markers = [];
+                document.getElementById('paintCanvas').classList.add('hidden'); document.getElementById('placeholderText').classList.remove('hidden');
+                document.getElementById('canvasContainer').classList.add('p-6'); document.getElementById('downloadBtn').classList.add('hidden');
+                updateProjectBomList(); switchView('view-project-edit');
+            });
+        }
+        
+        document.getElementById('backToProjectsBtn')?.addEventListener('click', () => switchView('view-projects'));
+        document.getElementById('maker')?.addEventListener('change', function(e) { document.getElementById('customMaker').classList.toggle('hidden', e.target.value !== 'その他'); });
+        document.getElementById('grade')?.addEventListener('change', function(e) { document.getElementById('customGrade').classList.toggle('hidden', e.target.value !== 'その他'); });
 
-        document.getElementById('saveProjectBtn').addEventListener('click', () => {
+        // --- 座標の圧縮によるズレ修正 (Scaling Logic) ---
+        document.getElementById('saveProjectBtn')?.addEventListener('click', () => {
             if(!currentEditingProjectId) return;
             let compressedImage = null;
+            let scaledMarkers = JSON.parse(JSON.stringify(markers)); // コピーを作成
+
             if(uploadedImage.src && uploadedImage.src.startsWith('data:')) {
-                const offCanvas = document.createElement('canvas'); const offCtx = offCanvas.getContext('2d');
-                let w = uploadedImage.width; let h = uploadedImage.height;
-                if(w > 800) { h = Math.round(h * (800 / w)); w = 800; }
-                offCanvas.width = w; offCanvas.height = h; offCtx.drawImage(uploadedImage, 0, 0, w, h);
-                compressedImage = offCanvas.toDataURL('image/jpeg', 0.6); 
+                const offCanvas = document.createElement('canvas'); 
+                const offCtx = offCanvas.getContext('2d');
+                let w = uploadedImage.width; 
+                let h = uploadedImage.height;
+                let scale = 1;
+
+                // 圧縮時のリサイズによる座標ズレを防ぐため、スケール比率を計算
+                if(w > 1200) { 
+                    scale = 1200 / w;
+                    w = 1200; 
+                    h = Math.round(h * scale); 
+                }
+
+                offCanvas.width = w; offCanvas.height = h; 
+                offCtx.drawImage(uploadedImage, 0, 0, w, h);
+                compressedImage = offCanvas.toDataURL('image/jpeg', 0.8); // 画質を0.8に向上
+
+                // リサイズされた場合、マーカーの座標も等倍縮小する
+                if(scale !== 1) {
+                    scaledMarkers = scaledMarkers.map(m => ({
+                        ...m,
+                        x: m.x * scale,
+                        y: m.y * scale,
+                        labelX: m.labelX * scale,
+                        labelY: m.labelY * scale
+                    }));
+                }
             }
+
             let finalMaker = document.getElementById('maker').value; if (finalMaker === 'その他') finalMaker = document.getElementById('customMaker').value.trim() || 'その他';
             let finalGrade = document.getElementById('grade').value; if (finalGrade === 'その他') finalGrade = document.getElementById('customGrade').value.trim() || 'その他';
 
-            const projData = { id: currentEditingProjectId, maker: finalMaker, grade: finalGrade, name: document.getElementById('projectName').value.trim(), image: compressedImage, markers: JSON.parse(JSON.stringify(markers)), updatedAt: Date.now() };
+            const projData = { 
+                id: currentEditingProjectId, 
+                maker: finalMaker, 
+                grade: finalGrade, 
+                name: document.getElementById('projectName').value.trim(), 
+                image: compressedImage, 
+                markers: scaledMarkers, // 補正済みの座標を保存
+                updatedAt: Date.now() 
+            };
+
             const idx = myProjects.findIndex(p => p.id === currentEditingProjectId);
             if(idx >= 0) { myProjects[idx] = projData; } else { myProjects.unshift(projData); }
-            saveProjects(); alert('保存しました。'); renderProjectList(); switchView('view-projects');
+            
+            saveProjects(); 
+            renderProjectList(); 
+            switchView('view-projects');
         });
 
         function loadProjectToEditor(id) {
@@ -775,16 +1014,19 @@
             }
             switchView('view-project-edit');
         }
+        
         window.deleteProject = function(id, event) { event.stopPropagation(); if(confirm('このプロジェクトを削除しますか？')) { myProjects = myProjects.filter(p => p.id !== id); saveProjects(); renderProjectList(); } }
 
         // --- Editor Canvas Handling ---
-        const canvas = document.getElementById('paintCanvas'); const ctx = canvas.getContext('2d');
+        let uploadedImage = new Image();
+        let markers = [];
+        const canvas = document.getElementById('paintCanvas'); const ctx = canvas?.getContext('2d');
         const paintModal = document.getElementById('paintModal'); const paintInput = document.getElementById('paintInput');
         const autocompleteList = document.getElementById('autocompleteList'); const paintListUI = document.getElementById('paintList');
 
         let tempCoord = null; let isDragging = false; let dragIndex = -1; let dragOffsetX = 0; let dragOffsetY = 0; let mouseDownPos = {x: 0, y: 0};
 
-        document.getElementById('imageLoader').addEventListener('change', function(e) {
+        document.getElementById('imageLoader')?.addEventListener('change', function(e) {
             const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
             reader.onload = function(event) {
                 uploadedImage.onload = function() {
@@ -823,7 +1065,7 @@
                 pos = { x: (e.changedTouches[0].clientX - rect.left) * scaleX, y: (e.changedTouches[0].clientY - rect.top) * scaleY, clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
             } else if (e.clientX) { pos = getMousePos(e); }
 
-            if (isDragging) { isDragging = false; dragIndex = -1; canvas.style.cursor = 'crosshair'; return; }
+            if (isDragging) { isDragging = false; dragIndex = -1; canvas.style.cursor = 'crosshair'; drawCanvas(); return; } // ドラッグ後は画面外にはみ出ないよう再描画でクランプ
             const dist = Math.sqrt(Math.pow(pos.x - mouseDownPos.x, 2) + Math.pow(pos.y - mouseDownPos.y, 2));
             if (dist < 10 && !paintModal.classList.contains('hidden') === false) {
                 tempCoord = { x: pos.x, y: pos.y };
@@ -835,53 +1077,60 @@
             }
         }
 
-        canvas.addEventListener('mousedown', handlePointerDown); canvas.addEventListener('mousemove', handlePointerMove); canvas.addEventListener('mouseup', handlePointerUp);
-        canvas.addEventListener('mouseleave', () => { if(isDragging) { isDragging=false; dragIndex=-1; canvas.style.cursor='crosshair'; } });
-        canvas.addEventListener('touchstart', handlePointerDown, {passive: false}); canvas.addEventListener('touchmove', handlePointerMove, {passive: false}); canvas.addEventListener('touchend', handlePointerUp);
+        if(canvas) {
+            canvas.addEventListener('mousedown', handlePointerDown); canvas.addEventListener('mousemove', handlePointerMove); canvas.addEventListener('mouseup', handlePointerUp);
+            canvas.addEventListener('mouseleave', () => { if(isDragging) { isDragging=false; dragIndex=-1; canvas.style.cursor='crosshair'; drawCanvas(); } });
+            canvas.addEventListener('touchstart', handlePointerDown, {passive: false}); canvas.addEventListener('touchmove', handlePointerMove, {passive: false}); canvas.addEventListener('touchend', handlePointerUp);
+        }
 
-        paintInput.addEventListener('input', function() {
-            const keyword = this.value.trim().toLowerCase(); autocompleteList.innerHTML = '';
-            if (!keyword) { autocompleteList.classList.add('hidden'); return; }
-            
-            const normalizedKeyword = keyword.replace(/[-\s]/g, '');
-            const availableInventory = myPaintInventory.filter(p => p.status === '所持');
-            
-            const matches = availableInventory.filter(p => {
-                const normId = p.id.toLowerCase().replace(/[-\s]/g, '');
-                const normName = p.name.toLowerCase().replace(/[-\s]/g, '');
-                const normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
-                return normId.includes(normalizedKeyword) || normName.includes(normalizedKeyword) || normBrand.includes(normalizedKeyword);
-            });
-
-            matches.sort((a, b) => {
-                const aId = a.id.toLowerCase().replace(/[-\s]/g, ''); const bId = b.id.toLowerCase().replace(/[-\s]/g, '');
-                if (aId === normalizedKeyword) return -1; if (bId === normalizedKeyword) return 1;
-                if (aId.startsWith(normalizedKeyword) && !bId.startsWith(normalizedKeyword)) return -1;
-                if (!aId.startsWith(normalizedKeyword) && bId.startsWith(normalizedKeyword)) return 1;
-                return 0;
-            });
-
-            if (matches.length > 0) {
-                autocompleteList.classList.remove('hidden');
-                matches.forEach(match => {
-                    const li = document.createElement('li'); li.className = 'p-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0 text-gray-700';
-                    const qtyColor = match.qty > 0 ? 'text-green-600' : 'text-red-500';
-                    let refHtml = match.ref ? `<div class="text-[10px] text-gray-400 truncate mt-0.5">参考: ${match.ref}</div>` : '';
-                    li.innerHTML = `<div class="flex justify-between items-center"><span class="font-bold">${match.name}</span><div class="flex items-center text-xs"><span class="${qtyColor} font-bold mr-2">在庫:${match.qty}</span><span class="text-slate-400">${match.brand}</span></div></div>${refHtml}`;
-                    li.addEventListener('click', () => {
-                        if(match.qty <= 0) alert("警告：在庫が「0」です。");
-                        paintInput.value = match.name; autocompleteList.classList.add('hidden');
-                    });
-                    autocompleteList.appendChild(li);
+        if(paintInput) {
+            paintInput.addEventListener('input', function() {
+                const keyword = this.value.trim().toLowerCase(); autocompleteList.innerHTML = '';
+                if (!keyword) { autocompleteList.classList.add('hidden'); return; }
+                
+                const normalizedKeyword = keyword.replace(/[-\s]/g, '');
+                const availableInventory = myPaintInventory.filter(p => p.status === '所持');
+                
+                const matches = availableInventory.filter(p => {
+                    const normId = p.id.toLowerCase().replace(/[-\s]/g, '');
+                    const normName = p.name.toLowerCase().replace(/[-\s]/g, '');
+                    const normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
+                    return normId.includes(normalizedKeyword) || normName.includes(normalizedKeyword) || normBrand.includes(normalizedKeyword);
                 });
-            } else { autocompleteList.classList.add('hidden'); }
-        });
 
-        document.getElementById('cancelPaint').addEventListener('click', () => { paintModal.classList.add('hidden'); autocompleteList.classList.add('hidden'); tempCoord = null; });
-        document.getElementById('savePaint').addEventListener('click', () => {
+                matches.sort((a, b) => {
+                    const aId = a.id.toLowerCase().replace(/[-\s]/g, ''); const bId = b.id.toLowerCase().replace(/[-\s]/g, '');
+                    if (aId === normalizedKeyword) return -1; if (bId === normalizedKeyword) return 1;
+                    if (aId.startsWith(normalizedKeyword) && !bId.startsWith(normalizedKeyword)) return -1;
+                    if (!aId.startsWith(normalizedKeyword) && bId.startsWith(normalizedKeyword)) return 1;
+                    return 0;
+                });
+
+                if (matches.length > 0) {
+                    autocompleteList.classList.remove('hidden');
+                    matches.forEach(match => {
+                        const li = document.createElement('li'); li.className = 'p-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0 text-gray-700';
+                        const qtyColor = match.qty > 0 ? 'text-green-600' : 'text-red-500';
+                        let refHtml = match.ref ? `<div class="text-[10px] text-gray-400 truncate mt-0.5">参考: ${match.ref}</div>` : '';
+                        li.innerHTML = `<div class="flex justify-between items-center"><span class="font-bold">${match.name}</span><div class="flex items-center text-xs"><span class="${qtyColor} font-bold mr-2">在庫:${match.qty}</span><span class="text-slate-400">${match.brand}</span></div></div>${refHtml}`;
+                        li.addEventListener('click', () => {
+                            if(match.qty <= 0) alert("警告：在庫が「0」です。");
+                            paintInput.value = match.name; autocompleteList.classList.add('hidden');
+                        });
+                        autocompleteList.appendChild(li);
+                    });
+                } else { autocompleteList.classList.add('hidden'); }
+            });
+        }
+
+        document.getElementById('cancelPaint')?.addEventListener('click', () => { paintModal.classList.add('hidden'); autocompleteList.classList.add('hidden'); tempCoord = null; });
+        document.getElementById('savePaint')?.addEventListener('click', () => {
             const paintName = paintInput.value.trim();
             if (paintName && tempCoord) {
-                const isLeftHalf = tempCoord.x < canvas.width / 2; const defaultLabelX = isLeftHalf ? 50 : canvas.width - 250; const defaultLabelY = tempCoord.y - 20;
+                const isLeftHalf = tempCoord.x < canvas.width / 2; 
+                // 初期位置もレスポンシブに
+                const defaultLabelX = isLeftHalf ? Math.min(50, canvas.width*0.1) : canvas.width - Math.min(250, canvas.width*0.4); 
+                const defaultLabelY = Math.max(10, tempCoord.y - 20);
                 const matchedPaint = myPaintInventory.find(p => p.name === paintName); const brandName = matchedPaint ? matchedPaint.brand : 'その他';
                 markers.push({ x: tempCoord.x, y: tempCoord.y, name: paintName, brand: brandName, labelX: defaultLabelX, labelY: defaultLabelY, hitBox: null });
                 drawCanvas(); updateProjectBomList();
@@ -889,22 +1138,61 @@
             paintModal.classList.add('hidden'); autocompleteList.classList.add('hidden'); tempCoord = null;
         });
 
+        // --- 描画ロジックの改善 (文字サイズ可変＆画面外へのはみ出し防止) ---
         function drawCanvas() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); if(uploadedImage.src) ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
+            if(!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            if(uploadedImage.src) ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
+            
+            // キャンバスサイズに応じたフォントサイズの計算 (Min:14px, Max:32px)
+            const baseFontSize = Math.max(14, Math.min(32, Math.floor(canvas.width / 35)));
+            
             markers.forEach((marker, index) => {
-                const { x, y, name, labelX, labelY } = marker;
+                let { x, y, name, labelX, labelY } = marker;
+                
+                // ポイントの描画
                 ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.fillStyle = '#ef4444'; ctx.fill(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
-                ctx.font = 'bold 24px sans-serif'; const textStr = `${index + 1}. ${name}`; const textWidth = ctx.measureText(textStr).width; const boxWidth = textWidth + 20; const boxHeight = 40;
+                
+                // テキストとボックスサイズの計算
+                ctx.font = `bold ${baseFontSize}px sans-serif`; 
+                const textStr = `${index + 1}. ${name}`; 
+                const textWidth = ctx.measureText(textStr).width; 
+                const boxWidth = textWidth + 20; 
+                const boxHeight = baseFontSize + 16; // 文字サイズに合わせて高さも変更
+                
+                // 【安全装置（リミットスイッチ）】ラベルがキャンバスの外に出ないようにクランプ(制限)する
+                if (labelX + boxWidth > canvas.width - 5) labelX = canvas.width - boxWidth - 5;
+                if (labelX < 5) labelX = 5;
+                if (labelY + boxHeight > canvas.height - 5) labelY = canvas.height - boxHeight - 5;
+                if (labelY < 5) labelY = 5;
+                
+                // クランプした結果をマーカーオブジェクトに反映（ドラッグ操作の補正）
+                marker.labelX = labelX;
+                marker.labelY = labelY;
+
                 marker.hitBox = { x: labelX, y: labelY, w: boxWidth, h: boxHeight };
-                ctx.beginPath(); ctx.moveTo(x, y); const labelCenterX = labelX + boxWidth / 2; const labelCenterY = labelY + boxHeight / 2; const midX = x + (labelCenterX - x) * 0.5; const midY = y - 20; 
+                
+                // 引出線の描画
+                ctx.beginPath(); ctx.moveTo(x, y); 
+                const labelCenterX = labelX + boxWidth / 2; 
+                const labelCenterY = labelY + boxHeight / 2; 
+                const midX = x + (labelCenterX - x) * 0.5; 
+                const midY = y - (boxHeight/2); 
                 ctx.lineTo(midX, midY); ctx.lineTo(labelCenterX, labelCenterY);
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 4; ctx.stroke(); ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.stroke(); 
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 4; ctx.stroke(); 
+                ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.stroke(); 
+                
+                // ラベル背景の描画
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.beginPath(); ctx.roundRect(labelX, labelY, boxWidth, boxHeight, 5); ctx.fill();
-                ctx.fillStyle = '#ffffff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(textStr, labelX + 10, labelY + boxHeight / 2);
+                
+                // テキストの描画
+                ctx.fillStyle = '#ffffff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; 
+                ctx.fillText(textStr, labelX + 10, labelY + boxHeight / 2);
             });
         }
 
         function updateProjectBomList() {
+            if(!paintListUI) return;
             paintListUI.innerHTML = '';
             if (markers.length === 0) { paintListUI.innerHTML = '<p class="text-sm text-gray-500 italic">まだ登録されていません。</p>'; return; }
             const groupedMarkers = markers.reduce((acc, marker, originalIndex) => {
@@ -921,7 +1209,7 @@
                 paintListUI.appendChild(ul);
             });
         }
-        document.getElementById('downloadBtn').addEventListener('click', () => {
+        document.getElementById('downloadBtn')?.addEventListener('click', () => {
             if (markers.length === 0 && !uploadedImage.src) return;
             const link = document.createElement('a'); link.download = `${document.getElementById('projectName').value.trim() || 'project'}_blueprint.png`; link.href = canvas.toDataURL('image/png'); link.click();
         });
@@ -942,6 +1230,7 @@
         function updateInvFilterOptions() {
             const filterMaker = document.getElementById('invFilterMaker');
             const filterType = document.getElementById('invFilterType');
+            if(!filterMaker || !filterType) return;
             const currentMaker = filterMaker.value; const currentType = filterType.value;
             const uniqueMakers = [...new Set(myPaintInventory.map(p => p.brand))].filter(Boolean).sort();
             const uniqueTypes = [...new Set(myPaintInventory.map(p => p.type))].filter(Boolean).sort();
@@ -953,77 +1242,80 @@
             if (uniqueTypes.includes(currentType)) filterType.value = currentType;
         }
 
-        document.getElementById('invFilterMaker').addEventListener('change', (e) => { trackSearch('inventory', 'maker', e.target.value); renderInventoryList(); });
-        document.getElementById('invFilterType').addEventListener('change', (e) => { trackSearch('inventory', 'type', e.target.value); renderInventoryList(); });
+        document.getElementById('invFilterMaker')?.addEventListener('change', (e) => { trackSearch('inventory', 'maker', e.target.value); renderInventoryList(); });
+        document.getElementById('invFilterType')?.addEventListener('change', (e) => { trackSearch('inventory', 'type', e.target.value); renderInventoryList(); });
 
         const masterSearchInput = document.getElementById('masterSearchInput');
         const masterAutocompleteList = document.getElementById('masterAutocompleteList');
         
-        masterSearchInput.addEventListener('input', function() {
-            const keyword = this.value.trim().toLowerCase(); masterAutocompleteList.innerHTML = '';
-            if (!keyword) { masterAutocompleteList.classList.add('hidden'); return; }
-            
-            const normalizedKeyword = keyword.replace(/[-\s]/g, '');
+        if(masterSearchInput) {
+            masterSearchInput.addEventListener('input', function() {
+                const keyword = this.value.trim().toLowerCase(); masterAutocompleteList.innerHTML = '';
+                if (!keyword) { masterAutocompleteList.classList.add('hidden'); return; }
+                
+                const normalizedKeyword = keyword.replace(/[-\s]/g, '');
 
-            const matches = masterPaintDB.filter(p => {
-                const normId = p.id.toLowerCase().replace(/[-\s]/g, '');
-                const normName = p.name.toLowerCase().replace(/[-\s]/g, '');
-                const normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
-                return normId.includes(normalizedKeyword) || normName.includes(normalizedKeyword) || normBrand.includes(normalizedKeyword);
-            });
-
-            matches.sort((a, b) => {
-                const aId = a.id.toLowerCase().replace(/[-\s]/g, ''); const bId = b.id.toLowerCase().replace(/[-\s]/g, '');
-                if (aId === normalizedKeyword) return -1; if (bId === normalizedKeyword) return 1;
-                if (aId.startsWith(normalizedKeyword) && !bId.startsWith(normalizedKeyword)) return -1;
-                if (!aId.startsWith(normalizedKeyword) && bId.startsWith(normalizedKeyword)) return 1;
-                return 0;
-            });
-
-            if (matches.length > 0) {
-                masterAutocompleteList.classList.remove('hidden');
-                const displayMatches = matches.slice(0, 50); 
-                displayMatches.forEach(match => {
-                    const li = document.createElement('li'); li.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 flex justify-between items-center';
-                    let refHtml = match.ref ? `<span class="text-[10px] text-indigo-500 mt-1 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${match.ref}</span>` : '';
-                    
-                    li.innerHTML = `
-                        <div class="flex flex-col">
-                            <span class="font-bold text-gray-800 text-sm">${match.id} ${match.name}</span>
-                            <span class="text-xs text-slate-500">${match.brand} / ${match.series} / ${match.type}</span>
-                            ${refHtml}
-                        </div>
-                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">追加 +</span>
-                    `;
-                    li.addEventListener('click', () => {
-                        let targetStatus = (currentTabStatus === '欲しい') ? '欲しい' : '所持'; let targetFav = (currentTabStatus === 'お気に入り');
-                        const existing = myPaintInventory.find(p => p.id === match.id && p.brand === match.brand && p.series === match.series);
-                        if (existing) {
-                            if (targetStatus === '所持') { existing.qty += 1; existing.status = '所持'; } 
-                            else if (targetStatus === '欲しい' && existing.status !== '所持') { existing.qty += 1; }
-                            if (targetFav) existing.isFavorite = true;
-                        } else {
-                            myPaintInventory.unshift({ 
-                                uid: generateUid(), brand: match.brand, id: match.id, 
-                                name: `${match.brand.substring(0,3)} ${match.id} ${match.name}`, 
-                                status: targetStatus, qty: targetStatus === '所持' ? 1 : 0, 
-                                isFavorite: targetFav, type: match.type || 'その他',
-                                series: match.series || '', ref: match.ref || ''
-                            });
-                        }
-                        saveInventory(); masterSearchInput.value = ''; masterAutocompleteList.classList.add('hidden');
-                        renderInventoryList();
-                    });
-                    masterAutocompleteList.appendChild(li);
+                const matches = masterPaintDB.filter(p => {
+                    const normId = p.id.toLowerCase().replace(/[-\s]/g, '');
+                    const normName = p.name.toLowerCase().replace(/[-\s]/g, '');
+                    const normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
+                    return normId.includes(normalizedKeyword) || normName.includes(normalizedKeyword) || normBrand.includes(normalizedKeyword);
                 });
-            } else { masterAutocompleteList.classList.remove('hidden'); masterAutocompleteList.innerHTML = '<li class="p-3 text-sm text-gray-500 text-center italic">見つかりません。</li>'; }
-        });
+
+                matches.sort((a, b) => {
+                    const aId = a.id.toLowerCase().replace(/[-\s]/g, ''); const bId = b.id.toLowerCase().replace(/[-\s]/g, '');
+                    if (aId === normalizedKeyword) return -1; if (bId === normalizedKeyword) return 1;
+                    if (aId.startsWith(normalizedKeyword) && !bId.startsWith(normalizedKeyword)) return -1;
+                    if (!aId.startsWith(normalizedKeyword) && bId.startsWith(normalizedKeyword)) return 1;
+                    return 0;
+                });
+
+                if (matches.length > 0) {
+                    masterAutocompleteList.classList.remove('hidden');
+                    const displayMatches = matches.slice(0, 50); 
+                    displayMatches.forEach(match => {
+                        const li = document.createElement('li'); li.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 flex justify-between items-center';
+                        let refHtml = match.ref ? `<span class="text-[10px] text-indigo-500 mt-1 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${match.ref}</span>` : '';
+                        
+                        li.innerHTML = `
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-800 text-sm">${match.id} ${match.name}</span>
+                                <span class="text-xs text-slate-500">${match.brand} / ${match.series} / ${match.type}</span>
+                                ${refHtml}
+                            </div>
+                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">追加 +</span>
+                        `;
+                        li.addEventListener('click', () => {
+                            let targetStatus = (currentTabStatus === '欲しい') ? '欲しい' : '所持'; let targetFav = (currentTabStatus === 'お気に入り');
+                            const existing = myPaintInventory.find(p => p.id === match.id && p.brand === match.brand && p.series === match.series);
+                            if (existing) {
+                                if (targetStatus === '所持') { existing.qty += 1; existing.status = '所持'; } 
+                                else if (targetStatus === '欲しい' && existing.status !== '所持') { existing.qty += 1; }
+                                if (targetFav) existing.isFavorite = true;
+                            } else {
+                                myPaintInventory.unshift({ 
+                                    uid: generateUid(), brand: match.brand, id: match.id, 
+                                    name: `${match.brand.substring(0,3)} ${match.id} ${match.name}`, 
+                                    status: targetStatus, qty: targetStatus === '所持' ? 1 : 0, 
+                                    isFavorite: targetFav, type: match.type || 'その他',
+                                    series: match.series || '', ref: match.ref || ''
+                                });
+                            }
+                            saveInventory(); masterSearchInput.value = ''; masterAutocompleteList.classList.add('hidden');
+                            renderInventoryList();
+                        });
+                        masterAutocompleteList.appendChild(li);
+                    });
+                } else { masterAutocompleteList.classList.remove('hidden'); masterAutocompleteList.innerHTML = '<li class="p-3 text-sm text-gray-500 text-center italic">見つかりません。</li>'; }
+            });
+        }
 
         function renderInventoryList() {
             updateInvFilterOptions(); renderQuickFilters('inventory');
-            const makerFilterVal = document.getElementById('invFilterMaker').value;
-            const typeFilterVal = document.getElementById('invFilterType').value;
+            const makerFilterVal = document.getElementById('invFilterMaker')?.value || 'ALL';
+            const typeFilterVal = document.getElementById('invFilterType')?.value || 'ALL';
 
+            if(!inventoryListUI) return;
             inventoryListUI.innerHTML = '';
             let filteredInventory = currentTabStatus === 'お気に入り' ? myPaintInventory.filter(item => item.isFavorite) : myPaintInventory.filter(item => item.status === currentTabStatus);
 
@@ -1032,7 +1324,7 @@
             });
 
             filteredInventory.sort((a, b) => a.brand.localeCompare(b.brand));
-            if(filteredInventory.length === 0) { inventoryListUI.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">該当する塗料がありません。</div>`; return; }
+            if(filteredInventory.length === 0) { inventoryListUI.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">該当するデータがありません。</div>`; return; }
 
             filteredInventory.forEach(item => {
                 const li = document.createElement('li'); li.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex flex-col justify-between';
@@ -1045,7 +1337,7 @@
                 const heartFill = item.isFavorite ? 'currentColor' : 'none';
                 let purchaseBtnHtml = '';
                 if (item.status === '欲しい' && item.qty > 0) {
-                    purchaseBtnHtml = `<div class="mt-3 pt-2 border-t border-gray-100 flex justify-end"><button onclick="purchaseItem('${item.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>購入</button></div>`;
+                    purchaseBtnHtml = `<div class="mt-3 pt-2 border-t border-gray-100 flex justify-end"><button onclick="window.purchaseItem('${item.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>購入</button></div>`;
                 }
 
                 let refHtml = item.ref ? `<div class="text-[10px] text-indigo-500 mt-1">参考: ${item.ref}</div>` : '';
@@ -1063,10 +1355,10 @@
                             ${refHtml}
                         </div>
                         <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-3 bg-gray-50 p-1.5 rounded border border-gray-100 mt-2 md:mt-0">
-                            <button onclick="toggleFavorite('${item.uid}')" class="${heartColor} p-1 transition" title="お気に入り"><svg class="w-6 h-6" fill="${heartFill}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></button>
-                            <select onchange="updateItemStatus('${item.uid}', this.value)" class="text-xs border border-gray-300 rounded p-1 bg-white outline-none focus:ring-1 focus:ring-blue-500"><option value="所持" ${item.status === '所持' ? 'selected' : ''}>所持</option><option value="欲しい" ${item.status === '欲しい' ? 'selected' : ''}>欲しい</option></select>
-                            <div class="flex items-center border border-gray-300 rounded bg-white h-8"><button onclick="updateItemQty('${item.uid}', -1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-red-500 transition h-full font-bold">-</button><input type="number" readonly value="${item.qty}" class="w-8 text-center text-sm font-bold text-gray-700 border-x border-gray-200 h-full outline-none bg-transparent"><button onclick="updateItemQty('${item.uid}', 1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-blue-500 transition h-full font-bold">+</button></div>
-                            <button onclick="removeItem('${item.uid}')" class="text-red-400 hover:text-red-600 p-1 transition" title="削除"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            <button onclick="window.toggleFavorite('${item.uid}')" class="${heartColor} p-1 transition" title="お気に入り"><svg class="w-6 h-6" fill="${heartFill}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></button>
+                            <select onchange="window.updateItemStatus('${item.uid}', this.value)" class="text-xs border border-gray-300 rounded p-1 bg-white outline-none focus:ring-1 focus:ring-blue-500"><option value="所持" ${item.status === '所持' ? 'selected' : ''}>所持</option><option value="欲しい" ${item.status === '欲しい' ? 'selected' : ''}>欲しい</option></select>
+                            <div class="flex items-center border border-gray-300 rounded bg-white h-8"><button onclick="window.updateItemQty('${item.uid}', -1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-red-500 transition h-full font-bold">-</button><input type="number" readonly value="${item.qty}" class="w-8 text-center text-sm font-bold text-gray-700 border-x border-gray-200 h-full outline-none bg-transparent"><button onclick="window.updateItemQty('${item.uid}', 1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-blue-500 transition h-full font-bold">+</button></div>
+                            <button onclick="window.removeItem('${item.uid}')" class="text-red-400 hover:text-red-600 p-1 transition" title="削除"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </div>
                     </div>
                     ${purchaseBtnHtml}
@@ -1082,36 +1374,16 @@
         window.purchaseItem = (uid) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.status = '所持'; if(item.qty <= 0) item.qty = 1; saveInventory(); renderInventoryList(); } }
 
         // === 8. Settings Logic ===
-        document.getElementById('exportBtn').addEventListener('click', () => {
+        document.getElementById('exportBtn')?.addEventListener('click', () => {
             const data = { inventory: myPaintInventory, projects: myProjects, stats: searchStats };
             const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'paint_tracker_backup.json'; a.click(); URL.revokeObjectURL(url);
         });
 
-        document.getElementById('importFile').addEventListener('change', (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    if(data.inventory) myPaintInventory = data.inventory;
-                    if(data.projects) myProjects = data.projects;
-                    if(data.stats) searchStats = data.stats;
-                    saveInventory(); saveProjects(); saveStats();
-                    alert('データのインポートが完了しました。'); location.reload();
-                } catch(err) { alert('ファイルの形式が正しくありません。'); }
-            };
-            reader.readAsText(file);
-        });
+        document.getElementById('resetProjectsBtn')?.addEventListener('click', () => { if(confirm('本当にすべてのプロジェクトを削除しますか？')) { myProjects = []; saveProjects(); renderProjectList(); alert('消去しました。'); } });
+        document.getElementById('resetInventoryBtn')?.addEventListener('click', () => { if(confirm('本当に在庫データを全消去しますか？')) { myPaintInventory = []; saveInventory(); renderInventoryList(); alert('消去しました。'); } });
 
-        document.getElementById('resetProjectsBtn').addEventListener('click', () => { if(confirm('本当にすべてのプロジェクトを削除しますか？')) { myProjects = []; saveProjects(); renderProjectList(); alert('消去しました。'); } });
-        document.getElementById('resetInventoryBtn').addEventListener('click', () => { if(confirm('本当に在庫データを全消去しますか？')) { myPaintInventory = []; saveInventory(); renderInventoryList(); alert('消去しました。'); } });
-
-        // Initialize App
-        loadData();
-        renderProjectList();
-        renderInventoryList();
         switchView('view-projects');
 
     </script>
