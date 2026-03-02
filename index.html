@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Paint Tracker - 塗裝配方管理系統 (Hybrid)</title>
+    <title>Visual Paint Tracker - 塗裝配方管理系統 (Hybrid V20)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         canvas { user-select: none; -webkit-user-select: none; }
@@ -18,6 +18,11 @@
 
         #authOverlay { backdrop-filter: blur(5px); }
     </style>
+
+    <!-- ⚠️ V20: 改用高相容性 Compat SDK，避免 Module CORS 錯誤與廣告阻擋器干擾 -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 font-sans pb-16 md:pb-0 md:pt-16">
 
@@ -25,7 +30,7 @@
     <div id="authOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <svg class="w-16 h-16 text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <h1 class="text-3xl font-black mb-2 tracking-wider">PAINT TRACKER</h1>
-        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">HYBRID SYNC SYSTEM V19</p>
+        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">HYBRID SYNC SYSTEM V20</p>
         
         <button id="googleLoginBtn" class="bg-white text-slate-800 px-6 py-3 rounded-full font-bold shadow-xl hover:bg-slate-100 transition transform hover:scale-105 flex items-center">
             <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -384,50 +389,55 @@
     </div>
 
     <!-- ========================================== -->
-    <!-- JavaScript Logic (Hybrid Architecture)     -->
+    <!-- JavaScript Logic (Traditional Compat Script)-->
     <!-- ========================================== -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+    <script>
+        // ⚠️ V20: 將 let 改為 var，徹底解決部分環境熱重載時 "Identifier already declared" 的錯誤
+        var userUid = null;
+        var isSyncData = false; 
+        var isCloudReady = false; 
+
+        var myPaintInventory = [];
+        var myProjects = [];
+        var searchStats = { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } };
+        var currentEditingProjectId = null; 
+        
+        var app, auth, db;
 
         // ======================================================================
         // ⚠️【Firebase Config エリア】
         // ======================================================================
-        const firebaseConfig = {
+        var firebaseConfig = {
           apiKey: "AIzaSyCaGPbVVMCHFR3FsMNNKKatPZe4fDFb7_o",
           authDomain: "paint-tracker-61b0f.firebaseapp.com",
           projectId: "paint-tracker-61b0f",
           storageBucket: "paint-tracker-61b0f.firebasestorage.app",
           messagingSenderId: "448149747303",
-          appId: "1:448149747303:web:3442224383db6b282b06c2",
-          measurementId: "G-9G3L8HVWPG"
+          appId: "1:448149747303:web:3442224383db6b282b06c2"
+          // MeasurementId 移除以避開 Ad-blocker 導致的整段腳本崩潰
         };
         // ======================================================================
 
-        let app, auth, db, analytics;
-        
+        // 安全初始化 Firebase (防止重複初始化錯誤)
         try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            analytics = getAnalytics(app); 
+            if (!firebase.apps.length) {
+                app = firebase.initializeApp(firebaseConfig);
+            } else {
+                app = firebase.app(); // 如果已初始化，就拿現有的
+            }
+            auth = firebase.auth();
+            db = firebase.firestore();
         } catch(e) {
             console.error("Firebase Initialization Error:", e);
         }
-
-        let userUid = null;
-        let isSyncData = false; // V19: 改名避免混淆，表示是否正在接收雲端資料
-        let isCloudReady = false; // V19: 新增旗標，確保雲端初次下載完成前不可覆蓋寫入
 
         // === 0. Global Utilities ===
         function generateUid() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
 
         // === 1. ROM (Master Paint DB - 2500+ Items) ===
-        const masterPaintDB = [];
+        var masterPaintDB = [];
 
-        const compressedDB = [
+        var compressedDB = [
             { brand: "GSIクレオス", series: "リトルアーモリーカラー", type: "ラッカー", prefix: "LAC", data: "101:アルマイトブラック|102:パーカーガンメタリック|103:ステンレスシルバー|104:ガンブルーメタリック|105:フラットダークアース1|106:フラットダークアース2" },
             { brand: "GSIクレオス", series: "銀河英雄伝説カラー", type: "ラッカー", prefix: "XGC", data: "01:ブリュンヒルトホワイト|02:ヒューベリオングリーン|03:自由惑星同盟軍標準型戦艦グリーン" },
             { brand: "GSIクレオス", series: "Mr.カラースプレー", type: "ラッカースプレー", prefix: "S", data: "1:ホワイト（白）|2:ブラック（黒）|3:レッド（赤）|4:イエロー（黄）|5:ブルー（青）|6:グリーン（緑）|8:シルバー（銀）|9:ゴールド（金）|11:ガルグレー|12:オリーブドラブ(1)|13:ニュートラルグレー|14:ネービーブルー|15:暗緑色（中島系）|16:濃緑色|28:黒鉄色|29:艦底色|30:つや消しクリアー|31:軍艦色(1)|32:軍艦色(2)|33:つや消しブラック|34:スカイブルー|35:明灰白色（三菱系）|38:オリーブドラブ(2)|39:ダークイエロー|40:ジャーマングレー|41:レッドブラウン|42:マホガニー|43:ウッドブラウン|44:タン|46:クリアー（透明）|47:クリアーレッド|48:クリアーイエロー|49:クリアーオレンジ|50:クリアーブルー|58:黄橙色|59:オレンジ（橙）|61:焼鉄色|62:つや消しホワイト|63:ピンク（桃）|64:ルマングリーン|65:インディブルー|66:デイトナグリーン|67:パープル（紫）|68:モンザレッド|69:グランプリホワイト|70:ダークグリーン|72:ミディアムブルー|75:メタリックレッド|76:メタリックブルー|77:メタリックグリーン|78:メタルブラック|79:シャインレッド|80:コバルトブルー|81:赤２号|90:シャインシルバー|92:セミグロスブラック|97:灰色９号|101:スモークグレー|107:キャラクターホワイト|108:キャラクターレッド|109:キャラクターイエロー|110:キャラクターブルー|111:キャラクターフレッシュ(1)|112:キャラクターフレッシュ(2)|115:RLM65ライトブルー|117:RLM76ライトブルー|124:暗緑色（三菱系）|129:濃緑色（中島系）|151:ホワイトパール" },
@@ -447,21 +457,13 @@
             { brand: "GSIクレオス", series: "スーパーメタリック2", type: "ラッカー", prefix: "SM", data: "201:スーパーファインシルバー2|202:スーパーゴールド2|203:スーパーアイアン2|204:スーパーステンレス2|205:スーパーチタン2|206:スーパークロームシルバー2|207:スーパーリッチゴールド|208:スーパージュラルミン|209:スーパーカッパー|210:スーパーピンクゴールド|211:スーパーレッドゴールド|212:スーパーマットアルミ" },
             { brand: "GSIクレオス", series: "Mr.クリスタルカラー", type: "ラッカー", prefix: "XC", data: "01:ダイヤモンドシルバー|02:トパーズゴールド|03:ルビーレッド|04:アメジストパープル|05:サファイアブルー|06:トルマリングリーン|07:ターコイズグリーン|08:ムーンストーンパール" },
             { brand: "GSIクレオス", series: "水性ホビーカラー", type: "水性", prefix: "H", data: "1:ホワイト|2:ブラック|3:レッド|4:イエロー|5:ブルー|6:グリーン|7:ブラウン|8:シルバー|9:ゴールド|10:カッパー|11:つや消しホワイト|12:つや消しブラック|13:つや消しレッド|14:オレンジ|15:インディブルー|16:イエローグリーン|17:ココアブラウン|18:黒鉄色|19:ピンク|20:つや消しクリアー|21:グランプリホワイト|22:グレー|23:シャインレッド|24:オレンジイエロー|25:スカイブルー|26:デイトナグリーン|27:ライトブラウン|28:メタルブラック|29:サーモンピンク|30:クリアー|31:ホワイトグリーン|32:ダークグレー|33:あずき色|34:クリームイエロー|35:コバルトブルー|36:ダークグリーン|37:ウッドブラウン|38:赤鉄色|39:パープル|40:フラットベース|41:ペールグリーン|42:ブルーグレー|43:ワインレッド|44:薄茶色|45:みず色|46:エメラルドグリーン|47:レッドブラウン|48:オリーブグレー|49:すみれ色|50:よもぎ色|51:ガルグレー|52:オリーブドラブ(1)|53:ニュートラルグレー|54:ネイビーブルー|55:ミッドナイトブルー|56:ミディアムブルー|57:エアクラフトグレー|58:機体内部色|59:濃緑色(1)|60:濃緑色(2)|61:明灰白色(1)|62:明灰白色(2)|63:青竹色|64:RLM71ダークグリーン|65:RLM70ブラックグリーン|66:RLM79サンディブラウン|67:RLM65ライトブルー|68:RLM74グレーグリーン|69:RLM75グレーバイオレット|70:RLM02グレー|71:ミドルストーン|72:ダークアース|73:ダークグリーン(2)|74:スカイ|75:ダークシーグレー|76:焼鉄色|77:タイヤブラック|78:オリーブドラブ(2)|79:サンディイエロー|80:カーキグリーン|81:カーキ|82:軍艦色(1)|83:軍艦色(2)|84:マホガニー|85:セールカラー|86:モンザレッド|87:メタリックレッド|88:メタリックブルー|89:メタリックグリーン|90:クリアーレッド|91:クリアーイエロー|92:クリアーオレンジ|93:クリアーブルー|94:クリアーグリーン|95:スモークグレー|96:スモークブルー|97:蛍光イエロー|98:蛍光オレンジ|99:蛍光ピンク|100:蛍光グリーン|101:蛍光レッド|110:半光沢クリアー|151:ホワイトパール|301:グレーFS36081|302:グリーンFS34092|303:グリーンFS34102|304:オリーブドラブFS34087|305:グレーFS36118|306:グレーFS36270|307:グレーFS36320|308:グレーFS36375|309:グリーンFS34079|310:ブラウンFS30219|311:グレーFS36622|312:グリーンFS34227|313:イエローFS33531|314:ブルーFS35622|315:グレーFS16440|316:ホワイトFS17875|317:グレーFS36231|318:レドーム|319:薄松葉色|320:濃松葉色|321:黄土色|322:フタロシアニンブルー|323:ライトブルー|324:ライトグレー|325:グレーFS26440|326:ブルーFS15044|327:レッドFS11136|328:ブルーFS15050|329:イエローFS13538|330:ダークグリーンBS381C|331:ダークシーグレーBS381C|332:ライトエアクラフトグレー|333:エクストラダークシーグレー|334:バーリーグレー|335:ミディアムシーグレー|336:ヘンプ|337:グレイッシュブルー|338:ライトグレーFS36495|339:エンジングレーFS16081|340:フィールドグリーンFS34097|401:ダークグレー退色|402:グリーン退色|403:イエロー退色|404:レッド退色|405:オリーブドラブ退色|406:チョコレート退色" },
-            { brand: "GSIクレオス", series: "水性 Classy 'n Dressy", type: "水性", prefix: "HCD", data: "01:ラベンダー|02:チューリップ|03:サクラ|04:ギンセンカ|05:ミモザ|06:クローバー|07:ブルースター" },
-            { brand: "GSIクレオス", series: "水性 HJコラボ", type: "水性", prefix: "HJ", data: "01:HJグローホワイト|02:HJピンクレッド|03:HJマスタードイエロー|04:HJアースブルー|05:HJモスグリーン|06:HJアッシュパープル|07:HJプロトタイプオレンジ|08:HJウォームグレー" },
-            { brand: "GSIクレオス", series: "水性 スーパーメタリック", type: "水性", prefix: "HSM", data: "01:スーパーファインシルバー|02:スーパーファインゴールド" },
-            { brand: "GSIクレオス", series: "水性 スターターセット", type: "水性", prefix: "HS", data: "30:水性ホビーカラースターターセット" },
-            { brand: "GSIクレオス", series: "水性 色ノ源", type: "水性", prefix: "HCR", data: "1:シアン|2:マゼンタ|3:イエロー" },
             { brand: "GSIクレオス", series: "アクリジョン", type: "水性アクリル", prefix: "N", data: "1:ホワイト|2:ブラック|3:レッド|4:イエロー|5:ブルー|6:グリーン|7:ブラウン|8:シルバー|9:ゴールド|10:カッパー|11:つや消しホワイト|12:つや消しブラック|13:つや消しレッド|14:オレンジ|15:インディブルー|16:イエローグリーン|17:ココアブラウン|18:黒鉄色|19:ピンク|20:つや消しクリアー|21:グランプリホワイト|22:ニュートラルグレー|23:シャインレッド|24:オレンジイエロー|25:スカイブルー|26:デイトナグリーン|27:ライトブラウン|28:メタルブラック|29:サーモンピンク|30:クリアー|31:クリアーレッド|32:クリアーオレンジ|33:クリアーイエロー|34:クリアーグリーン|35:クリアーブルー|36:蛍光レッド|37:蛍光オレンジ|38:蛍光イエロー|39:蛍光グリーン|40:蛍光ピンク|43:マルーン|44:薄茶色|45:みず色|46:エメラルドグリーン|47:レッドブラウン|49:すみれ色|50:よもぎ色|51:ガルグレー|52:オリーブドラブ(1)|54:ネイビーブルー|55:ミッドナイトブルー|56:ミディアムブルー|57:エアクラフトグレー|58:機体内部色|60:濃緑色|61:明灰白色|62:明灰緑色|63:青竹色|66:RLM79サンドイエロー|67:RLM65ライトブルー|68:RLM74グレーグリーン|69:RLM75グレーバイオレット|70:RLM02グレー|71:ミドルストーン|72:ダークアース|73:ダークグリーン(2)|76:焼鉄色|77:タイヤブラック|78:オリーブドラブ(2)|79:ダークイエロー|80:カーキグリーン|81:カーキ|82:軍艦色(1)|83:軍艦色(2)|84:マホガニー|85:セールカラー|86:モンザレッド|87:メタリックレッド|88:メタリックブルー|89:メタリックグリーン|90:クリアーレッド|91:クリアーイエロー|92:クリアーオレンジ|93:クリアーブルー|94:クリアーグリーン|95:スモークグレー|97:蛍光イエロー|98:蛍光オレンジ|99:蛍光ピンク|100:蛍光グリーン|101:蛍光レッド|127:コクピット色(中島系)" },
             { brand: "GSIクレオス", series: "アクリジョン ベース", type: "水性アクリル", prefix: "BN", data: "01:ベースホワイト|02:ベースグレー|03:ベースレッド|04:ベースイエロー|05:ベースブルー|06:ベースグリーン" },
             { brand: "GSIクレオス", series: "アクリジョン 筆塗り専用", type: "水性アクリル", prefix: "NF", data: "01:ストロベリーピンク|02:ミルキーコーラル|03:クリーミーベージュ|04:グラスグリーン|05:ミントブルー|06:カシスピンク|07:ワインレッド|08:グレイッシュパープル|09:アンティークゴールド" },
-            { brand: "GSIクレオス", series: "アクリジョン スターター", type: "水性アクリル", prefix: "NS", data: "30:アクリジョンスターターセット" },
             { brand: "GSIクレオス", series: "Mr.メタルカラー", type: "ラッカー", prefix: "MC", data: "211:クロームシルバー|212:アイアン|213:ステンレス|214:ダークアイアン|215:カッパー|216:ブロンズ|217:ゴールド|218:アルミ|219:ブラス" },
             { brand: "GSIクレオス", series: "ウェザリングカラー", type: "エナメル系", prefix: "WC", data: "01:マルチブラック|02:グランドブラウン|03:ステインブラウン|04:サンディウォッシュ|05:マルチホワイト|06:マルチグレー|07:グレイッシュブラウン|08:ラストオレンジ|09:シェイドブルー|10:スポットイエロー|11:フィルタリキッド フェイスグリーン|12:フィルタリキッド レイヤーバイオレット|13:フィルタリキッド スポットイエロー|14:フィルタリキッド ホワイトダスト|15:ライトグレイッシュ|16:オーカーソイル|17:マットアンバー|18:シェイドブラウン" },
             { brand: "GSIクレオス", series: "ウェザリングペースト", type: "ペースト", prefix: "WP", data: "01:マッドブラウン|02:マッドホワイト|03:ウェットクリアー|04:マッドイエロー|05:マッドレッド" },
             { brand: "GSIクレオス", series: "水性ウェザリングペイント", type: "水性", prefix: "WT", data: "01:ベーシックホワイト|02:ベーシックブラック|03:ミディアムマッド|04:ナチュラルラスト|05:ファインダスト|06:ウォッシュアンバー" },
-            { brand: "GSIクレオス", series: "水性ウェザリングセット", type: "水性", prefix: "WTS", data: "01:水性ウェザリングペイント 6色セット" },
-            { brand: "GSIクレオス", series: "ウェザリングライナー", type: "鉛筆型", prefix: "PP", data: "201:錆色セット|202:泥色セット|203:雪色セット" },
             { brand: "GSIクレオス", series: "八雲〈YAKUMO〉", type: "エナメル系", prefix: "WY", data: "01:セットA|02:セットB|03:セットC|04:セットD" },
             { brand: "GSIクレオス", series: "ウルトラメタリック", type: "ラッカー", prefix: "UM", data: "01:ウルトラシルバー" },
             { brand: "GSIクレオス", series: "色ノ源", type: "ラッカー", prefix: "CR", data: "1:シアン|2:マゼンタ|3:イエロー" },
@@ -476,16 +478,8 @@
             { brand: "GSIクレオス", series: "水性 30MSカラー", type: "水性", prefix: "HMS", data: "01:ボディーカラーA|02:ボディーカラーB|03:ボディーカラーC|04:ペールクリアーレッド|05:ペールクリアーオレンジ|06:ペールクリアーブラウン|07:クリアーホワイト|08:スムースパールコート" },
             { brand: "GSIクレオス", series: "水性 ボトムズカラー", type: "水性", prefix: "HV", data: "01:ATグリーン|02:ATライトグリーン|03:ATブルーグレー|04:ATライトグレー|05:ATダークブルー" },
             { brand: "GSIクレオス", series: "水性 ソフビカラー", type: "水性", prefix: "SVC", data: "01:ホワイト|02:ブラック|03:レッド|04:イエロー|05:ブルー|06:シルバー|07:ゴールド|08:メタリックブラック" },
-            { brand: "GSIクレオス", series: "Mr.ホビーマーカー", type: "水性マーカー", prefix: "CM", data: "01:ゴールド|02:シルバー|03:カッパー|04:ガンメタリック|05:焼鉄色|100:ぼかしペン|101:極細墨入れ(ブラック)|102:極細墨入れ(グレー)|103:極細墨入れ(ブラウン)" },
-            { brand: "GSIクレオス", series: "Mr.ホビーマーカーセット", type: "水性マーカー", prefix: "CMS", data: "01:メタリックセット" },
             { brand: "GSIクレオス", series: "ガンダムマーカー", type: "アルコール系", prefix: "GM", data: "01:スミいれ用(ブラック)|02:スミいれ用(グレー)|03:スミいれ用(ブラウン)|04:ガンダムゴールド|05:ガンダムシルバー|06:ガンダムブルー|07:ガンダムレッド|08:ガンダムイエロー|09:ガンダムアイグリーン|10:ガンダムブラック|11:ガンダムホワイト|12:ガンダムグレー|13:ガンダムメカグレー|14:ガンダム蛍光ピンク|15:ガンダム蛍光グリーン|16:ガンダムメタレッド|17:ガンダムメタブルー|18:ガンダムメタグリーン|19:ガンダムメタバイオレット|20:ふでペン(ブラック)|21:ふでペン(グレー)|300:消しペン|310:消しペン ツインタイプ|301:流し込み(ブラック)|302:流し込み(グレー)|303:流し込み(ブラウン)|311:流し込み(ブルー1)|312:流し込み(オレンジ1)|313:流し込み(オリーブ)|400:ぼかしペン|401:リアルタッチグレー1|402:リアルタッチグレー2|403:リアルタッチブルー1|404:リアルタッチレッド1|405:リアルタッチオレンジ1|406:リアルタッチグレー3|407:リアルタッチブラウン1|408:リアルタッチグリーン1|409:リアルタッチイエロー1|410:リアルタッチピンク1|501:クリアー(光沢)|502:クリアー(つや消し)" },
             { brand: "GSIクレオス", series: "ガンダムマーカーEX", type: "アルコール系", prefix: "XGM", data: "01:ニューホワイト|02:シャインシルバー|03:ロイヤルメタレッド|04:コスモメタブルー|05:ヘビーガンメタリック|06:ルミナスメタグリーン|07:ホワイトゴールド|08:イエローゴールド|100:ガンダムメッキシルバー|201:月光蝶ホロシルバー|202:トランザムホロレッド|203:MEPEホロイエロー|204:光の翼ホロブルー|205:サイコフレームホログリーン" },
-            { brand: "GSIクレオス", series: "ガンダムマーカーセット", type: "アルコール系", prefix: "GMS", data: "105:ベーシック6色セット|108:ジオン軍6色セット|109:ガンダムSEED ベーシック|110:細先タイプセット|112:リアルタッチマーカーセット1|113:リアルタッチマーカーセット2|121:メタリック マーカーセット|122:流し込みスミ入れペンセット|124:アドバンスセット|125:メタリックマーカーセット2|126:細先タイプセット2|127:MSVセット" },
-            { brand: "GSIクレオス", series: "ガンダムマーカーEXセット", type: "アルコール系", prefix: "XGMS", data: "100:メッキシルバー＆EXゴールド" },
-            { brand: "GSIクレオス", series: "ガンダムマーカーシステム", type: "ツール", prefix: "GMA", data: "01:エアブラシシステム|02:ハンドピース|01K:専用替え芯" },
-            { brand: "GSIクレオス", series: "ガンダムマーカースミ入れ", type: "シャープペン", prefix: "GP", data: "01:スミ入れペン シャープ|02:専用替芯" },
-            { brand: "GSIクレオス", series: "30MMマーカー", type: "アルコール系", prefix: "TMS", data: "01:ウェポン＆フレームセット|02:ベーシックセット" },
-            { brand: "GSIクレオス", series: "プラノサウルスマーカー", type: "アルコール系", prefix: "PSMS", data: "01:ティラノサウルスセット|02:トリケラ/ステゴサウルスセット" },
             
             // ----- TAMIYA 標準系列 -----
             { brand: "タミヤ", series: "アクリル塗料", type: "水性アクリル", prefix: "X-", data: "1:ブラック|2:ホワイト|3:ロイヤルブルー|4:ブルー|5:グリーン|6:オレンジ|7:レッド|8:レモンイエロー|9:ブラウン|10:ガンメタル|11:クロームシルバー|12:ゴールドリーフ|13:メタリックブルー|14:スカイブルー|15:ライトグリーン|16:パープル|17:ピンク|18:セミグロスブラック|19:スモーク|20:エナメル溶剤|20A:アクリル溶剤|21:フラットベース|22:クリヤー|23:クリヤーブルー|24:クリヤーイエロー|25:クリヤーグリーン|26:クリヤーオレンジ|27:クリヤーレッド|28:パークグリーン|31:チタンゴールド|32:チタンシルバー|33:ブロンズ|34:メタリックブラウン|35:セミグロスクリヤー" },
@@ -497,27 +491,6 @@
             { brand: "タミヤ", series: "エアーモデルスプレー (AS)", type: "ラッカースプレー", prefix: "AS-", data: "1:灰緑色|2:明灰白色|3:グレイグリーン|4:グレイバイオレット|5:ライトブルー|6:オリーブドラブ|7:ニュートラルグレイ|8:ネイビーブルー|9:ダークグリーン|10:オーシャングレイ|11:ミディアムシーグレイ|12:シルバーメタル|13:グリーン|14:オリーブグリーン|15:タン|16:ライトグレイ|17:濃緑色|18:明灰緑色|19:インターミディエイトブルー|20:インシグニアホワイト|21:暗緑色2(日本海軍)|22:ダークアース|23:ライトグリーン(ドイツ空軍)|24:ダークグリーン(ドイツ空軍)|25:ダークゴーストグレイ|26:ライトゴーストグレイ|27:ガンシップグレイ2|28:ミディアムグレイ|29:灰緑色(日本海軍)|30:ダークグリーン2(イギリス空軍)|31:オーシャングレイ2(イギリス空軍)|32:ミディアムシーグレイ2(イギリス空軍)|33:シルバーグレイ" },
             { brand: "タミヤ", series: "ポリカーボネート用スプレー (PS)", type: "ポリカーボネート用", prefix: "PS-", data: "1:ホワイト|2:レッド|3:ライトブルー|4:ブルー|5:ブラック|6:イエロー|7:オレンジ|8:ライトグリーン|9:グリーン|10:パープル|11:ピンク|12:シルバー|13:ゴールド|14:コッパー|15:メタリックレッド|16:メタリックブルー|17:メタリックグリーン|18:メタリックパープル|19:キャメルイエロー|20:蛍光レッド|21:パークグリーン|22:レーシンググリーン|23:ガンメタル|24:蛍光オレンジ|25:ブライトグリーン|27:蛍光イエロー|28:蛍光グリーン|29:蛍光ピンク|30:ブリリアントブルー|31:スモーク|32:コルサグレイ|33:チェリーレッド|34:ブライトレッド|35:ブルーバイオレット|36:フロストシルバー|37:フロストレッド|38:フロストブルー|39:フロストライトブルー|40:フロストピンク|41:ブライトシルバー|42:フロストイエロー|43:フロストオレンジ|44:フロストグリーン|45:フロストパープル|46:偏光パープル/グリーン|47:偏光ピンク/ゴールド|48:サテンシルバーアルマイト|49:スカイブルーアルマイト|50:スパークルピンクアルマイト|51:パープルアルマイト|52:シャンパンゴールドアルマイト|53:ラメフレーク|54:コバルトグリーン|55:フラットクリヤー|56:マスタードイエロー|57:パールホワイト|58:パールクリヤー|59:ダークメタリックブルー|60:ブライトマイカレッド|61:メタリックオレンジ|62:ピュアーオレンジ|63:ブライトガンメタル|SP:ダークブルー(特別企画)" },
             { brand: "タミヤ", series: "ペイントマーカー", type: "油性マーカー", prefix: "", data: "X-1:ブラック(マーカー)|X-2:ホワイト(マーカー)|X-7:レッド(マーカー)|X-11:クロームシルバー(マーカー)|X-12:ゴールドリーフ(マーカー)|XF-1:フラットブラック(マーカー)" },
-            { brand: "タミヤ", series: "メイクアップ材/溶剤", type: "溶剤/下地", prefix: "", data: "87042:スーパーサーフェイサーL(グレイ)|87044:ファインサーフェイサーL(ホワイト)|87064:ファインサーフェイサーL(ライトグレイ)|87160:ファインサーフェイサーL(オキサイドレッド)|87146:ファインサーフェイサーL(ピンク)|87061:メタルプライマー(スプレー)|87152:ナイロン・PP用プライマー(スプレー)|87075:サーフェイサー(40mlビン)|87096:サーフェイサーホワイト(40mlビン)|87198:ペイントリターダー(ラッカー用)|87114:ペイントリターダー(アクリル用)|87118:プレペイントクリーナー(PC用)|87204:メタルプライマー(40mlビン)|87089:エアーブラシクリーナー(250ml)|82110:ラッカー溶剤(10ml)|87077:ラッカー溶剤(250ml)|87194:ラッカー溶剤リターダー入り(250ml)|81520:アクリル溶剤X-20A(10ml)|81030:アクリル溶剤X-20A(46ml)|81040:アクリル溶剤X-20A(250ml)|80020:エナメル溶剤X-20(10ml)|80030:エナメル溶剤X-20(40ml)|80040:エナメル溶剤X-20(250ml)|81043:スペアボトル角ビン(10cc)|81044:スペアボトル丸ビン(10cc)|81041:スペアボトル(23cc)|81042:スペアボトル(46cc)|87196:キャップラベル(ラッカー用)|87197:キャップラベル(アクリル用)|87228:PC-5 ブラック(ポリカ筆塗り)" },
-
-            // ----- GAIA NOTES 完全版 (V14 最終結合) -----
-            { brand: "ガイアノーツ", series: "ガイアカラー", type: "ラッカー", prefix: "", data: "001:ピュアホワイト|002:ピュアブラック|003:ブライトレッド|004:ウルトラブルー|005:サンシャインイエロー|006:フラットベース|007:クリアー|008:フラットクリアー|009:ブライトシルバー|010:ブライトゴールド|011:フラットホワイト|012:フラットブラック|013:ビリジアングリーン|014:ナチュラルブラウン|015:ピュアオレンジ|016:ブリリアントピンク|017:パープルヴァイオレット|018:エメラルドグリーン|019:ラベンダー|020:ガンメタル|021:セミグロスホワイト|022:セミグロスブラック|023:スカーレット|024:コバルトブルー|025:橙黄色|030:セミグロスクリアー|031:アルティメットホワイト|032:アルティメットブラック|033:純色シアン|034:純色マゼンタ|035:純色イエロー|036:純色グリーン|037:純色バイオレット|038:プライマリーメタリックレッド|039:プライマリーメタリックブルー|040:プライマリーメタリックイエロー|041:クリアーレッド|042:クリアーオレンジ|043:クリアーブラック|044:クリアーブルー|045:クリアーイエロー|046:クリアーブラウン|047:クリアーパープル|048:クリアーグリーン|049:クリアーピンク|050:クリアーホワイト|051:ノーツフレッシュ|052:ノーツフレッシュホワイト|053:ノーツフレッシュピンク|054:ノーツフレッシュオレンジ|059:サフレスフレッシュピンク|060:サフレスフレッシュオレンジ|061:ミッドナイトブルー|062:ミディアムブルー|063:ブルーグレー|071:ニュートラルグレー I|072:ニュートラルグレー II|073:ニュートラルグレー III|074:ニュートラルグレー IV|075:ニュートラルグレー V|101:蛍光ブルー|102:蛍光ピンク|103:蛍光レッド|104:蛍光グリーン|105:蛍光イエロー|106:蛍光オレンジ|107:蛍光イエローグリーン|108:蛍光ブルーグリーン|110:蛍光クリアー|121:スターブライト シルバー|122:スターブライト ゴールド|123:スターブライト ジュラルミン|124:スターブライト ブラス|125:スターブライト アイアン|126:スターブライト シャンパンゴールド|131:パールシルバー|132:パールゴールド|133:パールカッパー|134:プリズム パープルグリーン|135:プリズム ブルーグリーン|137:プリズム パステル ターコイズブルーイエロー|138:プリズム パステル チェリーピンクブルー|139:プリズム パステル ミントグリーンブルー" },
-            { brand: "ガイアノーツ", series: "ミリタリーカラー", type: "ラッカー", prefix: "", data: "201:ダークイエロー 1|202:オリーブグリーン|203:レッドブラウン|204:ダークイエロー 2|213:灰緑色|214:暗緑色|215:FS34079 ダークグリーン|216:FS34102 グリーン|217:FS30219 タン|218:FS36622 グレー|219:FS36440 ライトガルグレー|221:ジャーマングレー|222:オキサイドレッド|223:インテリアカラー" },
-            { brand: "ガイアノーツ", series: "鉄道模型用カラー", type: "ラッカー", prefix: "", data: "1000:ステンレスシルバー|1001:ライトステンレスシルバー|1002:ダークステンレスシルバー|1003:青15号|1004:ぶどう色2号|1005:ねずみ色1号|1006:灰色9号|1007:ダークグレー|1008:クリーム1号|1009:ローズピンク|1010:ぶどう色1号|1011:黒|1012:赤サビ|1013:黄サビ|1021:コンテナブルー|1022:コンテナレッド|1023:名鉄スカーレット|1024:西武101系イエロー|1025:西武2000系イエロー|1026:西武ベージュ|1027:西武レッド" },
-            { brand: "ガイアノーツ", series: "タクティカル レーベル", type: "ラッカー", prefix: "TL-", data: "001:NATOグリーン|002:NATOブラウン|003:NATOブラック|004:ライトグレー FS36251|005:ダークグレー FS36176" },
-            { brand: "ガイアノーツ", series: "プレミアムカラー", type: "ラッカー", prefix: "GP-", data: "02:プレミアムレッド|04:プレミアムガラスパール|05:ウルトラマリンブルー|08:プレミアムミラークローム|09:プリズムブルーブラック" },
-            { brand: "ガイアノーツ", series: "Ex-カラー", type: "ラッカー", prefix: "Ex-", data: "01:Ex-ホワイト|02:Ex-ブラック|03:Ex-クリアー|04:Ex-フラットクリアー|05:Ex-フラットホワイト|06:Ex-フラットブラック|07:Ex-シルバー|08:Ex-ゴールド|09:Ex-セミグロスクリアー プレミアム|10:Ex-フラットクリアー プレミアム" },
-            { brand: "ガイアノーツ", series: "ガイアエナメルカラー", type: "エナメル", prefix: "GE-", data: "01:ホワイト|02:ブラック|03:シアン|04:マゼンタ|05:イエロー|06:蛍光ブルー|07:蛍光レッド|08:蛍光イエロー|09:蛍光ピンク|10:蛍光グリーン|51:赤サビ|52:黄サビ|53:煤(すす)|54:オイル|55:埃(ほこり)" },
-            { brand: "ガイアノーツ", series: "溶剤/洗浄液", type: "溶剤/下地", prefix: "T-", data: "01S:ガイアカラー薄め液(小)|01M:ガイアカラー薄め液(中)|01L:ガイアカラー薄め液(大)|06M:ブラシマスター(中)|06L:ブラシマスター(大)|07M:モデレイト プラス(中)|09M:メタリックマスター(中)|09L:メタリックマスター(大)|02M:アクリル溶剤(中)|05S:エナメル系溶剤(小)|12:速乾性エナメル系溶剤|04S:ツールウォッシュ(小)|04M:ツールウォッシュ(中)|04L:ツールウォッシュ(大)|13M:マイルドツールウォッシュ(中)|14:プラクリーナープラス|10s:ブラシクリリン(中)|11r:ガイアペイントリムーバーR|03L:レジンウォッシュ(大)" },
-            { brand: "ガイアノーツ", series: "ツール/アクセサリー", type: "ツール", prefix: "G-", data: "01r:ブラシウォッシュ|02r:ニードルキャップ|03n:スペアボトル in レシピBOX|05n:newスペアボトル大|04a:精密綿棒|09r:マスキングコートR|06r:フィニッシュマスターR|06br:フィニッシュマスター極細R|12:マイクロセラブレード|13:スペアセラブレード|16:パテスティック|21:じぶん専用色見本帳|23:円形マスキングシート|23b:山型マスキングシート|23c:波型マスキングシート|18b:ペーパーパレットスクエア ブラック|22:多用途ミニブラシ|25:スペアボトル スクエア ブラシ付き" },
-            { brand: "ガイアノーツ", series: "接着剤/セメント", type: "ツール", prefix: "GPC-", data: "01:ABS用接着剤低粘度|02:樹脂入り高粘度タイプ|03:QS 流し込み強力速乾タイプ" },
-            { brand: "ガイアノーツ", series: "サーフェイサーエヴォ", type: "溶剤/下地", prefix: "GS-", data: "01:サーフェイサーエヴォ グレー|02:サーフェイサーエヴォ ホワイト|03:サーフェイサーエヴォ ブラック|04:サーフェイサーエヴォ オキサイドレッド|05:サーフェイサーエヴォ フレッシュ|06:サーフェイサーエヴォ シルバー|07:パステルピンク|08:スカイブルー|09:レモンイエロー|10:ガンメタ|11:パープル|12:ゴールド|13:クリアー" },
-            { brand: "ガイアノーツ", series: "プライマー", type: "溶剤/下地", prefix: "P-", data: "01a:ガイアマルチプライマーアドバンス" },
-            { brand: "ガイアノーツ", series: "イージーペインター", type: "ツール", prefix: "EP-", data: "01:イージーペインター|02:スペアカートリッジ|03:専用スペアボトル|04:QEアダプター" },
-            { brand: "ガイアノーツ", series: "パテ/UVジェル", type: "メイクアップ材", prefix: "M-", data: "03z:瞬間クリアパテ Z|07pw:瞬間カラーパテ ピュアホワイト|07Kn:瞬間カラーパテ ブラック|07Gn:瞬間カラーパテ グレー|07Fn:瞬間カラーパテ フレッシュ|07Bn:瞬間カラーパテ ブルー|07Rn:瞬間カラーパテ レッド|07Yn:瞬間カラーパテ イエロー|07cb:瞬間カラーパテ クリアーブルー|07cr:瞬間カラーパテ クリアーレッド|07cy:瞬間カラーパテ クリアーイエロー|04s:UVジェルクリアS|05s:UVジェルグルーS|09s:スーパーUVライト|08:クイックハードスプレー|10:瞬間接着剤低粘度ブラック" },
-            { brand: "ガイアノーツ", series: "デカール/マテリアル", type: "ツール", prefix: "", data: "77013:アーティフィシャルホール|NT001:激削ヤスリ|NT002:スジ彫りノギス|NT-003n:スタンピングスポンジ|CC-01:クラフタサーフェイサー|SMB-01:システムマーキングベーシック01|VSC-N1:システムマーキング N1|VSC-N1s:システムマーキング N1s|VSC-N2:システムマーキング N2|VSC-N3:システムマーキング N3|VCD-01:コンビネーションデカール01|VEX-01:EXコーション01|VOC-01:漢デカール|VOW-01:梵字デカール|VNC-02:ナンバリングデカールNEO|VCB-01:カーボンデカール|VOD-01:ワンポイントデカール|VNC-03:ナンバリングデカールNEO2|VMS-C01:透明マスキングシート|VMS-P:ピッチガイドシート|CMC-01:模型人TVコラボデカール|CNP-01:nippperコラボデカール|CDC-01:チョップデカール|CKD-01:デジカモデカール|CAV-01A:アンティークポット|77020:GND-01 ホイルゴールド|77021:GND-02 ホイルシルバー|77022:GND-03 ホイルレッド|Z-01:ガイア プレミアム ハンドウォッシュ Z|Z-02s:エアクリーニングリキッド(中)" },
-            { brand: "ガイアノーツ", series: "筆シリーズ", type: "ツール", prefix: "", data: "BFP01:#10/0 極細面相筆|BFP02:#00 極細面相筆|BFP03:#1 極細面相筆|BF001:#0 平筆|BF002:#2 平筆|BF003:#4 平筆|BF004:#6 平筆|BF005:#8 平筆|BSL01:#1 プレミアムセーブルライナー筆|BT001:#1 テクスチャ筆|81113:ストレーキング筆 1/2|81114:ストレーキング筆 1/4|81115:アンギュラー 1/2|81116:アンギュラー 1/4" },
-            { brand: "ガイアノーツドットコス", series: "コスプレ/造形用", type: "スプレー等", prefix: "", data: "DC-01:ガイアスプレー ブラック|DC-02:ガイアスプレー シルバー|DC-03:ガイアスプレー レッド|DC-09:ガイアスプレー ホワイト|DC-10:ガイアスプレー グレー|78014:BC-01 ガイアベースコート|78015:DC-05 ガイアブレストフォーム∞|78016:DC-06 エアクリーニングリキッド|78017:DC-07 ガイアマルチブラシ フラット|78018:DC-08 ガイアマルチブラシ アンギュラー" },
-            { brand: "ペベオ", series: "4ARTIST/ワックス", type: "マーカー等", prefix: "", data: "マーカーホワイト:4ARTIST MARKER ホワイト|マーカーブラック:4ARTIST MARKER ブラック|マーカーゴールド:4ARTIST MARKER ゴールド|マーカーシルバー:4ARTIST MARKER シルバー|マーカーコッパー:4ARTIST MARKER コッパー|76649:ギルディングワックス コッパー|76650:ギルディングワックス エンペラーゴールド|76651:ギルディングワックス シルバー" },
             
             // ----- GAIA NOTES 特化/キャラクター系列 -----
             { brand: "ガイアノーツ", series: "ダンバインカラー", type: "ラッカー", prefix: "AM-", data: "01:オーラパープル1|02:オーラパープル2|03:オーラダークブルー|04:オーラグリーン1|05:オーラグリーン2|06:オーラペールブルー|07:オーラブルー" },
@@ -544,64 +517,68 @@
             { brand: "ガイアノーツ", series: "ティタノマキア", type: "ラッカー", prefix: "NTC-", data: "01:ハウンドブラック|02:ハウンドシルバー" },
             { brand: "ガイアノーツ", series: "NAZCA エナメル", type: "エナメル", prefix: "NE-", data: "001:デントグレー|002:シャドウブラウン|003:ピンポイントシルバー" },
             { brand: "ガイアノーツ", series: "NAZCA (ナスカ)", type: "ラッカー", prefix: "NC-", data: "001:スチールホワイト|002:フロストマットブラック|003:フレイムレッド|004:ミリオンブルー|005:ウォームライトグレー|006:ブルーフォグホワイト|007:ジョイントグレー|008:ニュートラルホワイト|009:コバルトバイオレット|010:マンダリンオレンジ|011:フラットシルバー|012:ディープカーキ|013:ブラストカーキ|014:マンダリンイエロー|015:ダークブルーイッシュパープル" },
-            { brand: "ガイアノーツ", series: "NAZCA メカサフ", type: "ラッカー/サフ", prefix: "NP-", data: "001:メカサフ ヘヴィ|002:メカサフ ライト|004:メカサフ スーパーヘヴィ|005:メカサフ ピンク" }
+            { brand: "ガイアノーツ", series: "NAZCA メカサフ", type: "ラッカー/サフ", prefix: "NP-", data: "001:メカサフ ヘヴィ|002:メカサフ ライト|004:メカサフ スーパーヘヴィ|005:メカサフ ピンク" },
+            
+            // ----- GAIA NOTES 完全版 (V14) -----
+            { brand: "ガイアノーツ", series: "ガイアカラー", type: "ラッカー", prefix: "", data: "001:ピュアホワイト|002:ピュアブラック|003:ブライトレッド|004:ウルトラブルー|005:サンシャインイエロー|006:フラットベース|007:クリアー|008:フラットクリアー|009:ブライトシルバー|010:ブライトゴールド|011:フラットホワイト|012:フラットブラック|013:ビリジアングリーン|014:ナチュラルブラウン|015:ピュアオレンジ|016:ブリリアントピンク|017:パープルヴァイオレット|018:エメラルドグリーン|019:ラベンダー|020:ガンメタル|021:セミグロスホワイト|022:セミグロスブラック|023:スカーレット|024:コバルトブルー|025:橙黄色|030:セミグロスクリアー|031:アルティメットホワイト|032:アルティメットブラック|033:純色シアン|034:純色マゼンタ|035:純色イエロー|036:純色グリーン|037:純色バイオレット|038:プライマリーメタリックレッド|039:プライマリーメタリックブルー|040:プライマリーメタリックイエロー|041:クリアーレッド|042:クリアーオレンジ|043:クリアーブラック|044:クリアーブルー|045:クリアーイエロー|046:クリアーブラウン|047:クリアーパープル|048:クリアーグリーン|049:クリアーピンク|050:クリアーホワイト|051:ノーツフレッシュ|052:ノーツフレッシュホワイト|053:ノーツフレッシュピンク|054:ノーツフレッシュオレンジ|059:サフレスフレッシュピンク|060:サフレスフレッシュオレンジ|061:ミッドナイトブルー|062:ミディアムブルー|063:ブルーグレー|071:ニュートラルグレー I|072:ニュートラルグレー II|073:ニュートラルグレー III|074:ニュートラルグレー IV|075:ニュートラルグレー V|101:蛍光ブルー|102:蛍光ピンク|103:蛍光レッド|104:蛍光グリーン|105:蛍光イエロー|106:蛍光オレンジ|107:蛍光イエローグリーン|108:蛍光ブルーグリーン|110:蛍光クリアー|121:スターブライト シルバー|122:スターブライト ゴールド|123:スターブライト ジュラルミン|124:スターブライト ブラス|125:スターブライト アイアン|126:スターブライト シャンパンゴールド|131:パールシルバー|132:パールゴールド|133:パールカッパー|134:プリズム パープルグリーン|135:プリズム ブルーグリーン|137:プリズム パステル ターコイズブルーイエロー|138:プリズム パステル チェリーピンクブルー|139:プリズム パステル ミントグリーンブルー" },
+            { brand: "ガイアノーツ", series: "ミリタリーカラー", type: "ラッカー", prefix: "", data: "201:ダークイエロー 1|202:オリーブグリーン|203:レッドブラウン|204:ダークイエロー 2|213:灰緑色|214:暗緑色|215:FS34079 ダークグリーン|216:FS34102 グリーン|217:FS30219 タン|218:FS36622 グレー|219:FS36440 ライトガルグレー|221:ジャーマングレー|222:オキサイドレッド|223:インテリアカラー" },
+            { brand: "ガイアノーツ", series: "鉄道模型用カラー", type: "ラッカー", prefix: "", data: "1000:ステンレスシルバー|1001:ライトステンレスシルバー|1002:ダークステンレスシルバー|1003:青15号|1004:ぶどう色2号|1005:ねずみ色1号|1006:灰色9号|1007:ダークグレー|1008:クリーム1号|1009:ローズピンク|1010:ぶどう色1号|1011:黒|1012:赤サビ|1013:黄サビ|1021:コンテナブルー|1022:コンテナレッド|1023:名鉄スカーレット|1024:西武101系イエロー|1025:西武2000系イエロー|1026:西武ベージュ|1027:西武レッド" },
+            { brand: "ガイアノーツ", series: "タクティカル レーベル", type: "ラッカー", prefix: "TL-", data: "001:NATOグリーン|002:NATOブラウン|003:NATOブラック|004:ライトグレー FS36251|005:ダークグレー FS36176" },
+            { brand: "ガイアノーツ", series: "プレミアムカラー", type: "ラッカー", prefix: "GP-", data: "02:プレミアムレッド|04:プレミアムガラスパール|05:ウルトラマリンブルー|08:プレミアムミラークローム|09:プリズムブルーブラック" },
+            { brand: "ガイアノーツ", series: "Ex-カラー", type: "ラッカー", prefix: "Ex-", data: "01:Ex-ホワイト|02:Ex-ブラック|03:Ex-クリアー|04:Ex-フラットクリアー|05:Ex-フラットホワイト|06:Ex-フラットブラック|07:Ex-シルバー|08:Ex-ゴールド|09:Ex-セミグロスクリアー プレミアム|10:Ex-フラットクリアー プレミアム" },
+            { brand: "ガイアノーツ", series: "ガイアエナメルカラー", type: "エナメル", prefix: "GE-", data: "01:ホワイト|02:ブラック|03:シアン|04:マゼンタ|05:イエロー|06:蛍光ブルー|07:蛍光レッド|08:蛍光イエロー|09:蛍光ピンク|10:蛍光グリーン|51:赤サビ|52:黄サビ|53:煤(すす)|54:オイル|55:埃(ほこり)" }
         ];
 
         // ROM初期化 (解凍処理)
-        compressedDB.forEach(group => {
-            const items = group.data.split('|');
-            items.forEach(item => {
-                const [num, name] = item.split(':');
-                const suffix = group.suffix || '';
-                const fullId = group.prefix + num;
-                if (!masterPaintDB.some(p => p.brand === group.brand && p.id === fullId)) {
+        compressedDB.forEach(function(group) {
+            var items = group.data.split('|');
+            items.forEach(function(item) {
+                var parts = item.split(':');
+                var num = parts[0];
+                var name = parts[1];
+                var suffix = group.suffix || '';
+                var fullId = group.prefix + num;
+                if (!masterPaintDB.some(function(p) { return p.brand === group.brand && p.id === fullId; })) {
                     masterPaintDB.push({ brand: group.brand, series: group.series, id: fullId, name: name + suffix, type: group.type, ref: "" });
                 }
             });
         });
 
-        // 状態変数 (RAM)
-        let myPaintInventory = [];
-        let myProjects = [];
-        let searchStats = { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } };
-        let currentEditingProjectId = null; 
-
-        // V19: 通信状態フラグ。データ受信中に誤ってアップロードしないための安全装置（インターロック）
-        let isSyncData = false; 
-        let isCloudReady = false; 
-
-        // === 2. Auth & Cloud/Local Sync (SCADA & Local 連携) ===
-
-        const guestLoginBtn = document.getElementById('guestLoginBtn');
-        if(guestLoginBtn) {
-            guestLoginBtn.addEventListener('click', () => {
-                const overlay = document.getElementById('authOverlay');
-                if(overlay) {
-                    overlay.classList.add('opacity-0');
-                    setTimeout(() => overlay.style.display = 'none', 500);
-                }
-                const loginStatusText = document.getElementById('loginStatusText');
-                if(loginStatusText) loginStatusText.textContent = "訪客模式 (Offline)";
-                
-                document.getElementById('logoutBtn')?.classList.add('hidden');
-                document.getElementById('reloginBtn')?.classList.remove('hidden');
-                
-                const cloudStatusBadge = document.getElementById('cloudStatusBadge');
-                if(cloudStatusBadge) {
-                    cloudStatusBadge.classList.replace('bg-green-500', 'bg-gray-500');
-                    cloudStatusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white mr-1.5"></span> OFFLINE MODE`;
-                }
-                
-                loadData();
-                renderInventoryList();
-                renderProjectList();
-                renderDashboard();
-            });
+        // 綁定事件安全封裝
+        function bindClick(id, handler) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener('click', handler);
         }
 
-        const handleGoogleLogin = () => {
-            const authLoading = document.getElementById('authLoading');
-            const authError = document.getElementById('authError');
+        bindClick('guestLoginBtn', function() {
+            var overlay = document.getElementById('authOverlay');
+            if(overlay) {
+                overlay.classList.add('opacity-0');
+                setTimeout(function() { overlay.style.display = 'none'; }, 500);
+            }
+            var loginStatusText = document.getElementById('loginStatusText');
+            if(loginStatusText) loginStatusText.textContent = "訪客模式 (Offline)";
+            
+            var logoutBtn = document.getElementById('logoutBtn');
+            var reloginBtn = document.getElementById('reloginBtn');
+            if(logoutBtn) logoutBtn.classList.add('hidden');
+            if(reloginBtn) reloginBtn.classList.remove('hidden');
+            
+            var cloudStatusBadge = document.getElementById('cloudStatusBadge');
+            if(cloudStatusBadge) {
+                cloudStatusBadge.classList.replace('bg-green-500', 'bg-gray-500');
+                cloudStatusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-white mr-1.5"></span> OFFLINE MODE';
+            }
+            
+            loadData();
+            renderInventoryList();
+            renderProjectList();
+            renderDashboard();
+        });
+
+        var handleGoogleLogin = function() {
+            var authLoading = document.getElementById('authLoading');
+            var authError = document.getElementById('authError');
             
             if(authError) { authError.classList.add('hidden'); authError.textContent = ''; }
 
@@ -615,57 +592,54 @@
             
             if(authLoading) authLoading.classList.remove('hidden');
             
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider).catch(err => {
+            var provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(function(err) {
                 console.error("Login Error:", err);
                 if(authLoading) authLoading.classList.add('hidden');
                 if(authError) {
                     if(err.code === 'auth/configuration-not-found') {
                         authError.textContent = "Firebaseの設定エラー: プロジェクトIDが間違っているか、Identity Platformの設定が未完了です。Firebase Consoleを確認してください。";
                     } else {
-                        authError.textContent = `ログインエラー: ${err.message}`;
+                        authError.textContent = "ログインエラー: " + err.message;
                     }
                     authError.classList.remove('hidden');
                 }
             });
         };
 
-        document.getElementById('googleLoginBtn')?.addEventListener('click', handleGoogleLogin);
-        document.getElementById('reloginBtn')?.addEventListener('click', handleGoogleLogin);
-
-        document.getElementById('logoutBtn')?.addEventListener('click', () => { 
-            if(auth) signOut(auth).then(() => {
-                location.reload(); 
-            }); 
+        bindClick('googleLoginBtn', handleGoogleLogin);
+        bindClick('reloginBtn', handleGoogleLogin);
+        bindClick('logoutBtn', function() { 
+            if(auth) auth.signOut().then(function() { location.reload(); }); 
         });
 
         if(auth) {
-            onAuthStateChanged(auth, (user) => {
-                const overlay = document.getElementById('authOverlay');
-                const loginStatusText = document.getElementById('loginStatusText');
+            auth.onAuthStateChanged(function(user) {
+                var overlay = document.getElementById('authOverlay');
+                var loginStatusText = document.getElementById('loginStatusText');
                 
                 if (user) {
                     userUid = user.uid;
-                    isCloudReady = false; // ログイン直後はまだクラウド準備未完了とする
+                    isCloudReady = false; 
 
-                    if(loginStatusText) loginStatusText.textContent = `${user.displayName} (已連線)`;
+                    if(loginStatusText) loginStatusText.textContent = user.displayName + " (已連線)";
                     
-                    document.getElementById('logoutBtn')?.classList.remove('hidden');
-                    document.getElementById('reloginBtn')?.classList.add('hidden');
+                    var logoutBtn = document.getElementById('logoutBtn');
+                    var reloginBtn = document.getElementById('reloginBtn');
+                    if(logoutBtn) logoutBtn.classList.remove('hidden');
+                    if(reloginBtn) reloginBtn.classList.add('hidden');
 
-                    const cloudStatusBadge = document.getElementById('cloudStatusBadge');
+                    var cloudStatusBadge = document.getElementById('cloudStatusBadge');
                     if(cloudStatusBadge) {
                         cloudStatusBadge.classList.replace('bg-gray-500', 'bg-green-500');
-                        cloudStatusBadge.innerHTML = `<span class="w-2 h-2 rounded-full bg-white animate-pulse mr-1.5"></span> CLOUD SYNC ON`;
+                        cloudStatusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-white animate-pulse mr-1.5"></span> CLOUD SYNC ON';
                     }
 
                     if(overlay && overlay.style.display !== 'none') {
                         overlay.classList.add('opacity-0');
-                        setTimeout(() => overlay.style.display = 'none', 500);
+                        setTimeout(function() { overlay.style.display = 'none'; }, 500);
                     }
                     
-                    // V19: ローカルデータがあればクラウドへマージする処理。
-                    // ただし、完全に上書きしないようにする。
                     migrateLocalToCloud();
                     startCloudSync();
                 } else {
@@ -676,11 +650,11 @@
 
         function loadData() {
             try {
-                const savedInv = localStorage.getItem('myPaintInventoryV3');
+                var savedInv = localStorage.getItem('myPaintInventoryV3');
                 if (savedInv) {
                     myPaintInventory = JSON.parse(savedInv);
-                    myPaintInventory.forEach(item => {
-                        const master = masterPaintDB.find(m => m.id === item.id && m.brand === item.brand && m.type === item.type);
+                    myPaintInventory.forEach(function(item) {
+                        var master = masterPaintDB.find(function(m) { return m.id === item.id && m.brand === item.brand && m.type === item.type; });
                         if (!item.type) item.type = master ? master.type : "その他";
                         if (!item.series) item.series = master ? master.series : "";
                         if (!item.ref) item.ref = master ? master.ref : "";
@@ -691,49 +665,45 @@
             } catch (e) { myPaintInventory = []; }
 
             try {
-                const savedProj = localStorage.getItem('myProjectsV1');
+                var savedProj = localStorage.getItem('myProjectsV1');
                 if (savedProj) myProjects = JSON.parse(savedProj);
             } catch (e) { myProjects = []; }
 
             try {
-                const savedStats = localStorage.getItem('paintTrackerStatsV1');
+                var savedStats = localStorage.getItem('paintTrackerStatsV1');
                 if (savedStats) searchStats = JSON.parse(savedStats);
             } catch (e) { console.warn('Stats loading failed'); }
         }
 
         function migrateLocalToCloud() {
-            const localInv = localStorage.getItem('myPaintInventoryV3');
-            const localProj = localStorage.getItem('myProjectsV1');
-            const localStats = localStorage.getItem('paintTrackerStatsV1');
+            var localInv = localStorage.getItem('myPaintInventoryV3');
+            var localProj = localStorage.getItem('myProjectsV1');
+            var localStats = localStorage.getItem('paintTrackerStatsV1');
 
-            // もしローカルにデータがあれば、それをRAMに展開（後でクラウドからデータが来たら統合される）
             if (localInv || localProj || localStats) {
                 console.log("偵測到本地資料，準備同步至雲端...");
                 if (localInv) myPaintInventory = JSON.parse(localInv);
                 if (localProj) myProjects = JSON.parse(localProj);
                 if (localStats) searchStats = JSON.parse(localStats);
                 
-                // V19: ここではまだ上書き保存しない。クラウドのデータを受信した後に統合する。
-                // 移行フラグとして残す
                 window.pendingMigration = true; 
             }
         }
 
         function startCloudSync() {
             if (!userUid || !db) return;
-            const spinner = document.getElementById('cloudLoadingSpinner');
+            var spinner = document.getElementById('cloudLoadingSpinner');
             if(spinner) spinner.classList.remove('hidden');
 
-            let invLoaded = false;
-            let projLoaded = false;
-            let statsLoaded = false;
+            var invLoaded = false;
+            var projLoaded = false;
+            var statsLoaded = false;
 
-            const checkReady = () => {
+            var checkReady = function() {
                 if(invLoaded && projLoaded && statsLoaded) {
                     isCloudReady = true;
                     if(spinner) spinner.classList.add('hidden');
                     
-                    // クラウドデータ受信完了後に、ローカルデータをマージしてアップロードする
                     if(window.pendingMigration) {
                         saveInventory();
                         saveProjects();
@@ -747,31 +717,29 @@
                 }
             }
 
-            onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), (docSnap) => {
+            db.doc("artifacts/paint-tracker/users/" + userUid + "/data/inventory").onSnapshot(function(docSnap) {
                 isSyncData = true;
-                if (docSnap.exists()) { 
-                    // V19: 初回マイグレーション時はクラウドデータを優先しつつ、ローカルに無いかチェックするロジックが必要だが、
-                    // 簡略化のため、既存のクラウドデータを読み込む。
+                if (docSnap.exists) { 
                     myPaintInventory = docSnap.data().items || []; 
                 } 
                 localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory));
                 renderInventoryList(); renderDashboard(); updateInvFilterOptions();
                 isSyncData = false;
                 invLoaded = true; checkReady();
-            }, (error) => { console.error("Sync Error:", error); if(spinner) spinner.classList.add('hidden'); });
+            }, function(error) { console.error("Sync Error:", error); if(spinner) spinner.classList.add('hidden'); });
 
-            onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), (docSnap) => {
+            db.doc("artifacts/paint-tracker/users/" + userUid + "/data/projects").onSnapshot(function(docSnap) {
                 isSyncData = true;
-                if (docSnap.exists()) { myProjects = docSnap.data().items || []; }
+                if (docSnap.exists) { myProjects = docSnap.data().items || []; }
                 localStorage.setItem('myProjectsV1', JSON.stringify(myProjects));
                 renderProjectList();
                 isSyncData = false;
                 projLoaded = true; checkReady();
             });
 
-            onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), (docSnap) => {
+            db.doc("artifacts/paint-tracker/users/" + userUid + "/data/stats").onSnapshot(function(docSnap) {
                 isSyncData = true;
-                if (docSnap.exists()) { searchStats = docSnap.data().data || { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } }; }
+                if (docSnap.exists) { searchStats = docSnap.data().data || { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } }; }
                 localStorage.setItem('paintTrackerStatsV1', JSON.stringify(searchStats));
                 isSyncData = false;
                 statsLoaded = true; checkReady();
@@ -780,21 +748,20 @@
 
         function saveInventory() { 
             localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory));
-            // V19: 同期受信中、またはクラウドがまだ準備できていない（初回ロード前）は書き込みをブロック
             if(!isSyncData && isCloudReady && userUid && db) {
-                setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), { items: myPaintInventory }); 
+                db.doc("artifacts/paint-tracker/users/" + userUid + "/data/inventory").set({ items: myPaintInventory }); 
             }
         }
         function saveProjects() { 
             localStorage.setItem('myProjectsV1', JSON.stringify(myProjects));
             if(!isSyncData && isCloudReady && userUid && db) {
-                setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), { items: myProjects }); 
+                db.doc("artifacts/paint-tracker/users/" + userUid + "/data/projects").set({ items: myProjects }); 
             }
         }
         function saveStats() { 
             localStorage.setItem('paintTrackerStatsV1', JSON.stringify(searchStats));
             if(!isSyncData && isCloudReady && userUid && db) {
-                setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), { data: searchStats }); 
+                db.doc("artifacts/paint-tracker/users/" + userUid + "/data/stats").set({ data: searchStats }); 
             }
         }
 
@@ -808,154 +775,142 @@
         }
 
         function renderQuickFilters(context) {
-            const containerId = context === 'project' ? 'projectQuickFilters' : 'invQuickFilters';
-            const container = document.getElementById(containerId);
+            var containerId = context === 'project' ? 'projectQuickFilters' : 'invQuickFilters';
+            var container = document.getElementById(containerId);
             if(!container) return;
             container.innerHTML = '';
-            let topTermsPerCategory = [];
-            Object.keys(searchStats[context]).forEach(category => {
-                const terms = searchStats[context][category];
-                let categoryTerms = [];
-                Object.keys(terms).forEach(val => categoryTerms.push({ category, value: val, count: terms[val] }));
-                categoryTerms.sort((a, b) => b.count - a.count);
+            var topTermsPerCategory = [];
+            Object.keys(searchStats[context]).forEach(function(category) {
+                var terms = searchStats[context][category];
+                var categoryTerms = [];
+                Object.keys(terms).forEach(function(val) { categoryTerms.push({ category: category, value: val, count: terms[val] }); });
+                categoryTerms.sort(function(a, b) { return b.count - a.count; });
                 topTermsPerCategory = topTermsPerCategory.concat(categoryTerms.slice(0, 3));
             });
             if (topTermsPerCategory.length === 0) { container.innerHTML = '<span class="text-gray-400 italic">尚無歷史紀錄</span>'; return; }
-            topTermsPerCategory.forEach(term => {
-                const btn = document.createElement('button');
-                let prefix = '';
+            topTermsPerCategory.forEach(function(term) {
+                var btn = document.createElement('button');
+                var prefix = '';
                 if(term.category === 'maker') prefix = '🏭 '; else if(term.category === 'grade') prefix = '📏 '; else if(term.category === 'type') prefix = '💧 ';
                 btn.className = 'bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold transition shadow-sm border border-blue-200';
-                btn.textContent = `${prefix}${term.value}`;
-                btn.onclick = () => window.applyQuickFilter(context, term.category, term.value);
+                btn.textContent = prefix + term.value;
+                btn.onclick = function() { window.applyQuickFilter(context, term.category, term.value); };
                 container.appendChild(btn);
             });
         }
 
         window.applyQuickFilter = function(context, category, value) {
             if (context === 'project') {
-                const el = document.getElementById(category === 'maker' ? 'filterMaker' : 'filterGrade');
+                var el = document.getElementById(category === 'maker' ? 'filterMaker' : 'filterGrade');
                 if(el) { el.value = value; renderProjectList(); }
             } else if (context === 'inventory') {
-                const el = document.getElementById(category === 'maker' ? 'invFilterMaker' : 'invFilterType');
+                var el = document.getElementById(category === 'maker' ? 'invFilterMaker' : 'invFilterType');
                 if(el) { el.value = value; renderInventoryList(); }
             }
         };
 
-        const navBtns = document.querySelectorAll('.nav-btn');
-        const viewSections = document.querySelectorAll('.view-section');
+        var navBtns = document.querySelectorAll('.nav-btn');
+        var viewSections = document.querySelectorAll('.view-section');
 
         function switchView(targetId) {
-            navBtns.forEach(btn => {
+            navBtns.forEach(function(btn) {
                 if(btn.dataset.target === targetId) {
                     btn.classList.add('text-blue-400', 'border-t-2', 'md:border-t-0', 'md:border-b-2', 'border-blue-400'); btn.classList.remove('text-slate-300');
                 } else {
                     btn.classList.remove('text-blue-400', 'border-t-2', 'md:border-t-0', 'md:border-b-2', 'border-blue-400'); btn.classList.add('text-slate-300');
                 }
             });
-            viewSections.forEach(view => {
+            viewSections.forEach(function(view) {
                 if(view.id === targetId) view.classList.add(targetId === 'view-inventory' ? 'active-flex' : 'active'); else view.classList.remove('active', 'active-flex');
             });
             if(targetId === 'view-inventory') renderInventoryList();
             if(targetId === 'view-projects') renderProjectList();
             if(targetId === 'view-dashboard') renderDashboard();
         }
-        navBtns.forEach(btn => btn.addEventListener('click', (e) => switchView(e.currentTarget.dataset.target)));
+        navBtns.forEach(function(btn) { btn.addEventListener('click', function(e) { switchView(e.currentTarget.dataset.target); }); });
 
         function renderDashboard() {
-            const ownedItems = myPaintInventory.filter(p => p.status === '所持' && p.qty > 0);
-            const totalQty = ownedItems.reduce((sum, item) => sum + item.qty, 0);
-            const totalKinds = ownedItems.length;
-            const wishlistItems = myPaintInventory.filter(p => p.status === '欲しい').length;
+            var ownedItems = myPaintInventory.filter(function(p) { return p.status === '所持' && p.qty > 0; });
+            var totalQty = ownedItems.reduce(function(sum, item) { return sum + item.qty; }, 0);
+            var totalKinds = ownedItems.length;
+            var wishlistItems = myPaintInventory.filter(function(p) { return p.status === '欲しい'; }).length;
 
-            const statTotalQtyEl = document.getElementById('statTotalQty'); const statTotalKindsEl = document.getElementById('statTotalKinds'); const statWishlistEl = document.getElementById('statWishlist');
-            const container = document.getElementById('brandStatsContainer');
+            var statTotalQtyEl = document.getElementById('statTotalQty'); var statTotalKindsEl = document.getElementById('statTotalKinds'); var statWishlistEl = document.getElementById('statWishlist');
+            var container = document.getElementById('brandStatsContainer');
 
-            if(statTotalQtyEl) statTotalQtyEl.innerHTML = `${totalQty} <span class="text-base font-normal">本</span>`;
-            if(statTotalKindsEl) statTotalKindsEl.innerHTML = `${totalKinds} <span class="text-base font-normal">種</span>`;
-            if(statWishlistEl) statWishlistEl.innerHTML = `${wishlistItems} <span class="text-base font-normal">種</span>`;
+            if(statTotalQtyEl) statTotalQtyEl.innerHTML = totalQty + ' <span class="text-base font-normal">本</span>';
+            if(statTotalKindsEl) statTotalKindsEl.innerHTML = totalKinds + ' <span class="text-base font-normal">種</span>';
+            if(statWishlistEl) statWishlistEl.innerHTML = wishlistItems + ' <span class="text-base font-normal">種</span>';
             if(!container) return; container.innerHTML = '';
             if (totalQty === 0) { container.innerHTML = '<p class="text-sm text-gray-500 italic">尚無資料。</p>'; return; }
 
-            const brandCounts = ownedItems.reduce((acc, item) => { acc[item.brand] = (acc[item.brand] || 0) + item.qty; return acc; }, {});
-            Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).forEach(([brand, count]) => {
-                const percentage = Math.round((count / totalQty) * 100);
-                let barColor = 'bg-slate-500';
+            var brandCounts = ownedItems.reduce(function(acc, item) { acc[item.brand] = (acc[item.brand] || 0) + item.qty; return acc; }, {});
+            Object.entries(brandCounts).sort(function(a, b) { return b[1] - a[1]; }).forEach(function(entry) {
+                var brand = entry[0]; var count = entry[1];
+                var percentage = Math.round((count / totalQty) * 100);
+                var barColor = 'bg-slate-500';
                 if(brand.includes('ガイア')) barColor = 'bg-green-500'; else if(brand.includes('GSI')) barColor = 'bg-blue-500'; else if(brand.includes('タミヤ')) barColor = 'bg-red-500';
-                container.insertAdjacentHTML('beforeend', `<div class="mb-3"><div class="flex justify-between text-sm mb-1"><span class="font-bold text-gray-700">${brand}</span><span class="text-gray-500">${count}本 (${percentage}%)</span></div><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${barColor} h-2.5 rounded-full" style="width: ${percentage}%"></div></div></div>`);
+                container.insertAdjacentHTML('beforeend', '<div class="mb-3"><div class="flex justify-between text-sm mb-1"><span class="font-bold text-gray-700">' + brand + '</span><span class="text-gray-500">' + count + '本 (' + percentage + '%)</span></div><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="' + barColor + ' h-2.5 rounded-full" style="width: ' + percentage + '%"></div></div></div>');
             });
         }
 
-        const projectGrid = document.getElementById('projectGrid');
+        var projectGrid = document.getElementById('projectGrid');
         function updateProjectFilterOptions() {
-            const filterMaker = document.getElementById('filterMaker'); const filterGrade = document.getElementById('filterGrade');
+            var filterMaker = document.getElementById('filterMaker'); var filterGrade = document.getElementById('filterGrade');
             if(!filterMaker || !filterGrade) return;
-            const currentMaker = filterMaker.value; const currentGrade = filterGrade.value;
-            const uniqueMakers = [...new Set(myProjects.map(p => p.maker))].filter(Boolean).sort();
-            const uniqueGrades = [...new Set(myProjects.map(p => p.grade))].filter(Boolean).sort();
-            filterMaker.innerHTML = '<option value="ALL">すべて (全部)</option>'; uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
-            filterGrade.innerHTML = '<option value="ALL">すべて (全部)</option>'; uniqueGrades.forEach(g => filterGrade.innerHTML += `<option value="${g}">${g}</option>`);
-            if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
-            if (uniqueGrades.includes(currentGrade)) filterGrade.value = currentGrade;
+            var currentMaker = filterMaker.value; var currentGrade = filterGrade.value;
+            var uniqueMakers = []; var uniqueGrades = [];
+            myProjects.forEach(function(p) { if(p.maker && uniqueMakers.indexOf(p.maker) === -1) uniqueMakers.push(p.maker); if(p.grade && uniqueGrades.indexOf(p.grade) === -1) uniqueGrades.push(p.grade); });
+            uniqueMakers.sort(); uniqueGrades.sort();
+            filterMaker.innerHTML = '<option value="ALL">すべて (全部)</option>'; uniqueMakers.forEach(function(m) { filterMaker.innerHTML += '<option value="' + m + '">' + m + '</option>'; });
+            filterGrade.innerHTML = '<option value="ALL">すべて (全部)</option>'; uniqueGrades.forEach(function(g) { filterGrade.innerHTML += '<option value="' + g + '">' + g + '</option>'; });
+            if (uniqueMakers.indexOf(currentMaker) !== -1) filterMaker.value = currentMaker;
+            if (uniqueGrades.indexOf(currentGrade) !== -1) filterGrade.value = currentGrade;
         }
 
-        document.getElementById('filterMaker')?.addEventListener('change', (e) => { trackSearch('project', 'maker', e.target.value); renderProjectList(); });
-        document.getElementById('filterGrade')?.addEventListener('change', (e) => { trackSearch('project', 'grade', e.target.value); renderProjectList(); });
-        document.getElementById('filterName')?.addEventListener('input', renderProjectList);
-
-        function renderProjectList() {
-            updateProjectFilterOptions(); renderQuickFilters('project');
-            const makerFilterVal = document.getElementById('filterMaker')?.value || 'ALL';
-            const gradeFilterVal = document.getElementById('filterGrade')?.value || 'ALL';
-            const nameFilterVal = document.getElementById('filterName')?.value.toLowerCase() || '';
-            if(!projectGrid) return; projectGrid.innerHTML = '';
-            const filteredProjects = myProjects.filter(proj => { return (makerFilterVal === 'ALL' || proj.maker === makerFilterVal) && (gradeFilterVal === 'ALL' || proj.grade === gradeFilterVal) && (!nameFilterVal || (proj.name && proj.name.toLowerCase().includes(nameFilterVal))); });
-            if(filteredProjects.length === 0) { projectGrid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400">找不到專案。</div>'; return; }
-
-            filteredProjects.forEach(proj => {
-                const dateStr = new Date(proj.updatedAt).toLocaleDateString('ja-JP'); const card = document.createElement('div');
-                card.className = 'bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer flex flex-col';
-                card.innerHTML = `<div class="h-40 bg-gray-100 relative overflow-hidden flex items-center justify-center">${proj.image ? `<img src="${proj.image}" class="object-cover w-full h-full opacity-90">` : `<span class="text-gray-400 text-sm">No Image</span>`}<div class="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">${proj.markers ? proj.markers.length : 0} 色</div></div><div class="p-4 flex-grow"><div class="flex justify-between items-start mb-2"><div><span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1">${proj.maker}</span><span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded">${proj.grade}</span></div></div><h3 class="font-bold text-gray-800 text-lg mb-1 truncate">${proj.name || '名稱未設定'}</h3><p class="text-xs text-gray-400">更新: ${dateStr}</p></div><div class="bg-gray-50 p-3 border-t border-gray-100 flex justify-end space-x-2"><button class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" onclick="deleteProject('${proj.id}', event)" title="刪除"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`;
-                card.addEventListener('click', (e) => { if(!e.target.closest('button')) loadProjectToEditor(proj.id); }); projectGrid.appendChild(card);
-            });
-        }
-
-        document.getElementById('createNewProjectBtn')?.addEventListener('click', () => {
+        bindClick('createNewProjectBtn', function() {
             currentEditingProjectId = generateUid();
             document.getElementById('maker').selectedIndex = 0; document.getElementById('grade').selectedIndex = 0;
             document.getElementById('customMaker').value = ''; document.getElementById('customMaker').classList.add('hidden');
             document.getElementById('customGrade').value = ''; document.getElementById('customGrade').classList.add('hidden');
             document.getElementById('projectName').value = ''; document.getElementById('imageLoader').value = '';
             uploadedImage = new Image(); markers = [];
-            document.getElementById('paintCanvas').classList.add('hidden'); document.getElementById('placeholderText').classList.remove('hidden');
+            var canvasEl = document.getElementById('paintCanvas');
+            if(canvasEl) canvasEl.classList.add('hidden'); 
+            document.getElementById('placeholderText').classList.remove('hidden');
             document.getElementById('canvasContainer').classList.add('p-6'); document.getElementById('downloadBtn').classList.add('hidden');
             updateProjectBomList(); switchView('view-project-edit');
         });
-        document.getElementById('backToProjectsBtn')?.addEventListener('click', () => switchView('view-projects'));
-        document.getElementById('maker')?.addEventListener('change', function(e) { document.getElementById('customMaker').classList.toggle('hidden', e.target.value !== 'その他'); });
-        document.getElementById('grade')?.addEventListener('change', function(e) { document.getElementById('customGrade').classList.toggle('hidden', e.target.value !== 'その他'); });
+        bindClick('backToProjectsBtn', function() { switchView('view-projects'); });
 
-        document.getElementById('saveProjectBtn')?.addEventListener('click', () => {
+        var makerEl = document.getElementById('maker');
+        if(makerEl) makerEl.addEventListener('change', function(e) { document.getElementById('customMaker').classList.toggle('hidden', e.target.value !== 'その他'); });
+        var gradeEl = document.getElementById('grade');
+        if(gradeEl) gradeEl.addEventListener('change', function(e) { document.getElementById('customGrade').classList.toggle('hidden', e.target.value !== 'その他'); });
+
+        bindClick('saveProjectBtn', function() {
             if(!currentEditingProjectId) return;
-            let compressedImage = uploadedImage.src && uploadedImage.src.startsWith('data:') ? uploadedImage.src : null;
-            let finalMaker = document.getElementById('maker').value; if (finalMaker === 'その他') finalMaker = document.getElementById('customMaker').value.trim() || 'その他';
-            let finalGrade = document.getElementById('grade').value; if (finalGrade === 'その他') finalGrade = document.getElementById('customGrade').value.trim() || 'その他';
+            var compressedImage = uploadedImage.src && uploadedImage.src.startsWith('data:') ? uploadedImage.src : null;
+            var finalMaker = document.getElementById('maker').value; if (finalMaker === 'その他') finalMaker = document.getElementById('customMaker').value.trim() || 'その他';
+            var finalGrade = document.getElementById('grade').value; if (finalGrade === 'その他') finalGrade = document.getElementById('customGrade').value.trim() || 'その他';
 
-            const projData = { id: currentEditingProjectId, maker: finalMaker, grade: finalGrade, name: document.getElementById('projectName').value.trim(), image: compressedImage, markers: JSON.parse(JSON.stringify(markers)), updatedAt: Date.now() };
-            const idx = myProjects.findIndex(p => p.id === currentEditingProjectId);
+            var projData = { id: currentEditingProjectId, maker: finalMaker, grade: finalGrade, name: document.getElementById('projectName').value.trim(), image: compressedImage, markers: JSON.parse(JSON.stringify(markers)), updatedAt: Date.now() };
+            var idx = myProjects.findIndex(function(p) { return p.id === currentEditingProjectId; });
             if(idx >= 0) { myProjects[idx] = projData; } else { myProjects.unshift(projData); }
             saveProjects(); renderProjectList(); switchView('view-projects');
         });
 
-        function loadProjectToEditor(id) {
-            const proj = myProjects.find(p => p.id === id); if(!proj) return;
+        window.loadProjectToEditor = function(id) {
+            var proj = myProjects.find(function(p) { return p.id === id; }); if(!proj) return;
             currentEditingProjectId = proj.id;
-            const makerSelect = document.getElementById('maker'); const customMaker = document.getElementById('customMaker');
-            if (Array.from(makerSelect.options).some(opt => opt.value === proj.maker)) { makerSelect.value = proj.maker; customMaker.classList.add('hidden'); } 
+            var makerSelect = document.getElementById('maker'); var customMaker = document.getElementById('customMaker');
+            var makerExists = Array.from(makerSelect.options).some(function(opt) { return opt.value === proj.maker; });
+            if (makerExists) { makerSelect.value = proj.maker; customMaker.classList.add('hidden'); } 
             else { makerSelect.value = 'その他'; customMaker.value = proj.maker || ''; customMaker.classList.remove('hidden'); }
 
-            const gradeSelect = document.getElementById('grade'); const customGrade = document.getElementById('customGrade');
-            if (Array.from(gradeSelect.options).some(opt => opt.value === proj.grade)) { gradeSelect.value = proj.grade; customGrade.classList.add('hidden'); } 
+            var gradeSelect = document.getElementById('grade'); var customGrade = document.getElementById('customGrade');
+            var gradeExists = Array.from(gradeSelect.options).some(function(opt) { return opt.value === proj.grade; });
+            if (gradeExists) { gradeSelect.value = proj.grade; customGrade.classList.add('hidden'); } 
             else { gradeSelect.value = 'その他'; customGrade.value = proj.grade || ''; customGrade.classList.remove('hidden'); }
 
             document.getElementById('projectName').value = proj.name || '';
@@ -963,120 +918,152 @@
             
             if(proj.image) {
                 uploadedImage = new Image();
-                uploadedImage.onload = () => {
-                    const canvas = document.getElementById('paintCanvas');
-                    canvas.width = uploadedImage.width; canvas.height = uploadedImage.height;
-                    canvas.classList.remove('hidden'); document.getElementById('placeholderText').classList.add('hidden');
+                uploadedImage.onload = function() {
+                    var canvasEl = document.getElementById('paintCanvas');
+                    canvasEl.width = uploadedImage.width; canvasEl.height = uploadedImage.height;
+                    canvasEl.classList.remove('hidden'); document.getElementById('placeholderText').classList.add('hidden');
                     document.getElementById('canvasContainer').classList.remove('p-6'); document.getElementById('downloadBtn').classList.remove('hidden');
                     drawCanvas(); updateProjectBomList();
                 };
                 uploadedImage.src = proj.image;
             } else {
                 uploadedImage = new Image();
-                document.getElementById('paintCanvas').classList.add('hidden'); document.getElementById('placeholderText').classList.remove('hidden'); document.getElementById('downloadBtn').classList.add('hidden');
+                var canvasEl = document.getElementById('paintCanvas');
+                if(canvasEl) canvasEl.classList.add('hidden'); 
+                document.getElementById('placeholderText').classList.remove('hidden'); document.getElementById('downloadBtn').classList.add('hidden');
                 updateProjectBomList();
             }
             switchView('view-project-edit');
-        }
+        };
         
-        window.deleteProject = function(id, event) { event.stopPropagation(); if(confirm('確定要刪除這個專案嗎？')) { myProjects = myProjects.filter(p => p.id !== id); saveProjects(); renderProjectList(); } }
+        window.deleteProject = function(id, event) { event.stopPropagation(); if(confirm('確定要刪除這個專案嗎？')) { myProjects = myProjects.filter(function(p) { return p.id !== id; }); saveProjects(); renderProjectList(); } }
+
+        var filterMakerEl = document.getElementById('filterMaker');
+        if(filterMakerEl) filterMakerEl.addEventListener('change', function(e) { trackSearch('project', 'maker', e.target.value); renderProjectList(); });
+        var filterGradeEl = document.getElementById('filterGrade');
+        if(filterGradeEl) filterGradeEl.addEventListener('change', function(e) { trackSearch('project', 'grade', e.target.value); renderProjectList(); });
+        var filterNameEl = document.getElementById('filterName');
+        if(filterNameEl) filterNameEl.addEventListener('input', renderProjectList);
+
+        function renderProjectList() {
+            updateProjectFilterOptions(); renderQuickFilters('project');
+            var makerFilterVal = document.getElementById('filterMaker') ? document.getElementById('filterMaker').value : 'ALL';
+            var gradeFilterVal = document.getElementById('filterGrade') ? document.getElementById('filterGrade').value : 'ALL';
+            var nameFilterVal = document.getElementById('filterName') ? document.getElementById('filterName').value.toLowerCase() : '';
+            if(!projectGrid) return; projectGrid.innerHTML = '';
+            var filteredProjects = myProjects.filter(function(proj) { return (makerFilterVal === 'ALL' || proj.maker === makerFilterVal) && (gradeFilterVal === 'ALL' || proj.grade === gradeFilterVal) && (!nameFilterVal || (proj.name && proj.name.toLowerCase().includes(nameFilterVal))); });
+            if(filteredProjects.length === 0) { projectGrid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400">找不到專案。</div>'; return; }
+
+            filteredProjects.forEach(function(proj) {
+                var dateStr = new Date(proj.updatedAt).toLocaleDateString('ja-JP'); var card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer flex flex-col';
+                card.innerHTML = '<div class="h-40 bg-gray-100 relative overflow-hidden flex items-center justify-center">' + (proj.image ? '<img src="' + proj.image + '" class="object-cover w-full h-full opacity-90">' : '<span class="text-gray-400 text-sm">No Image</span>') + '<div class="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">' + (proj.markers ? proj.markers.length : 0) + ' 色</div></div><div class="p-4 flex-grow"><div class="flex justify-between items-start mb-2"><div><span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1">' + proj.maker + '</span><span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded">' + proj.grade + '</span></div></div><h3 class="font-bold text-gray-800 text-lg mb-1 truncate">' + (proj.name || '名稱未設定') + '</h3><p class="text-xs text-gray-400">更新: ' + dateStr + '</p></div><div class="bg-gray-50 p-3 border-t border-gray-100 flex justify-end space-x-2"><button class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" onclick="window.deleteProject(\'' + proj.id + '\', event)" title="刪除"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>';
+                card.addEventListener('click', function(e) { if(!e.target.closest('button')) loadProjectToEditor(proj.id); }); projectGrid.appendChild(card);
+            });
+        }
 
         // --- Editor Canvas Handling ---
-        let uploadedImage = new Image();
-        let markers = [];
-        const canvas = document.getElementById('paintCanvas'); const ctx = canvas?.getContext('2d');
-        const paintModal = document.getElementById('paintModal'); const paintInput = document.getElementById('paintInput');
-        const autocompleteList = document.getElementById('autocompleteList'); const paintListUI = document.getElementById('paintList');
+        var uploadedImage = new Image();
+        var markers = [];
+        var canvas = document.getElementById('paintCanvas'); 
+        var ctx = canvas ? canvas.getContext('2d') : null;
+        var paintModal = document.getElementById('paintModal'); 
+        var paintInput = document.getElementById('paintInput');
+        var autocompleteList = document.getElementById('autocompleteList'); 
+        var paintListUI = document.getElementById('paintList');
 
-        let tempCoord = null; let isDragging = false; let dragIndex = -1; let dragOffsetX = 0; let dragOffsetY = 0; let mouseDownPos = {x: 0, y: 0};
+        var tempCoord = null; var isDragging = false; var dragIndex = -1; var dragOffsetX = 0; var dragOffsetY = 0; var mouseDownPos = {x: 0, y: 0};
 
-        document.getElementById('imageLoader')?.addEventListener('change', function(e) {
-            const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
-            reader.onload = function(event) {
-                const tempImg = new Image();
-                tempImg.onload = function() {
-                    let w = tempImg.width; let h = tempImg.height;
-                    const MAX_WIDTH = 1200;
-                    if(w > MAX_WIDTH) { h = Math.round(h * (MAX_WIDTH / w)); w = MAX_WIDTH; }
-                    
-                    const offCanvas = document.createElement('canvas');
-                    offCanvas.width = w; offCanvas.height = h;
-                    offCanvas.getContext('2d').drawImage(tempImg, 0, 0, w, h);
-                    
-                    uploadedImage = new Image();
-                    uploadedImage.onload = function() {
-                        canvas.width = uploadedImage.width; canvas.height = uploadedImage.height;
-                        canvas.classList.remove('hidden'); document.getElementById('downloadBtn').classList.remove('hidden');
-                        document.getElementById('placeholderText').classList.add('hidden'); document.getElementById('canvasContainer').classList.remove('p-6');
-                        markers = []; updateProjectBomList(); drawCanvas();
+        var imageLoaderEl = document.getElementById('imageLoader');
+        if(imageLoaderEl) {
+            imageLoaderEl.addEventListener('change', function(e) {
+                var file = e.target.files[0]; if (!file) return; var reader = new FileReader();
+                reader.onload = function(event) {
+                    var tempImg = new Image();
+                    tempImg.onload = function() {
+                        var w = tempImg.width; var h = tempImg.height;
+                        var MAX_WIDTH = 1200;
+                        if(w > MAX_WIDTH) { h = Math.round(h * (MAX_WIDTH / w)); w = MAX_WIDTH; }
+                        
+                        var offCanvas = document.createElement('canvas');
+                        offCanvas.width = w; offCanvas.height = h;
+                        offCanvas.getContext('2d').drawImage(tempImg, 0, 0, w, h);
+                        
+                        uploadedImage = new Image();
+                        uploadedImage.onload = function() {
+                            canvas.width = uploadedImage.width; canvas.height = uploadedImage.height;
+                            canvas.classList.remove('hidden'); document.getElementById('downloadBtn').classList.remove('hidden');
+                            document.getElementById('placeholderText').classList.add('hidden'); document.getElementById('canvasContainer').classList.remove('p-6');
+                            markers = []; updateProjectBomList(); drawCanvas();
+                        }
+                        uploadedImage.src = offCanvas.toDataURL('image/jpeg', 0.8);
                     }
-                    uploadedImage.src = offCanvas.toDataURL('image/jpeg', 0.8);
+                    tempImg.src = event.target.result;
                 }
-                tempImg.src = event.target.result;
-            }
-            reader.readAsDataURL(file);
-        });
+                reader.readAsDataURL(file);
+            });
+        }
 
         function getMousePos(e) {
-            const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
-            let clientX = e.clientX; let clientY = e.clientY;
+            var rect = canvas.getBoundingClientRect(); var scaleX = canvas.width / rect.width; var scaleY = canvas.height / rect.height;
+            var clientX = e.clientX; var clientY = e.clientY;
             if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
             return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY, clientX: clientX, clientY: clientY };
         }
 
         function handlePointerDown(e) {
-            const pos = getMousePos(e); mouseDownPos = { x: pos.x, y: pos.y };
-            for (let i = markers.length - 1; i >= 0; i--) {
-                const box = markers[i].hitBox;
+            var pos = getMousePos(e); mouseDownPos = { x: pos.x, y: pos.y };
+            for (var i = markers.length - 1; i >= 0; i--) {
+                var box = markers[i].hitBox;
                 if (box && pos.x >= box.x && pos.x <= box.x + box.w && pos.y >= box.y && pos.y <= box.y + box.h) {
                     isDragging = true; dragIndex = i; dragOffsetX = pos.x - markers[i].labelX; dragOffsetY = pos.y - markers[i].labelY;
                     canvas.style.cursor = 'grabbing'; e.preventDefault(); return; 
                 }
             }
         }
-        function handlePointerMove(e) { if (isDragging && dragIndex !== -1) { const pos = getMousePos(e); markers[dragIndex].labelX = pos.x - dragOffsetX; markers[dragIndex].labelY = pos.y - dragOffsetY; drawCanvas(); e.preventDefault(); } }
+        function handlePointerMove(e) { if (isDragging && dragIndex !== -1) { var pos = getMousePos(e); markers[dragIndex].labelX = pos.x - dragOffsetX; markers[dragIndex].labelY = pos.y - dragOffsetY; drawCanvas(); e.preventDefault(); } }
         function handlePointerUp(e) {
-            let pos = mouseDownPos; 
+            var pos = mouseDownPos; 
             if(e.changedTouches && e.changedTouches.length > 0) {
-                const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
+                var rect = canvas.getBoundingClientRect(); var scaleX = canvas.width / rect.width; var scaleY = canvas.height / rect.height;
                 pos = { x: (e.changedTouches[0].clientX - rect.left) * scaleX, y: (e.changedTouches[0].clientY - rect.top) * scaleY, clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
             } else if (e.clientX) { pos = getMousePos(e); }
 
             if (isDragging) { isDragging = false; dragIndex = -1; canvas.style.cursor = 'crosshair'; drawCanvas(); return; }
-            const dist = Math.sqrt(Math.pow(pos.x - mouseDownPos.x, 2) + Math.pow(pos.y - mouseDownPos.y, 2));
+            var dist = Math.sqrt(Math.pow(pos.x - mouseDownPos.x, 2) + Math.pow(pos.y - mouseDownPos.y, 2));
             if (dist < 10 && !paintModal.classList.contains('hidden') === false) {
                 tempCoord = { x: pos.x, y: pos.y };
-                const containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
-                const modalX = Math.min(pos.clientX - containerRect.left + 10, containerRect.width - 300);
-                const modalY = Math.min(pos.clientY - containerRect.top + 10, containerRect.height - 120);
-                paintModal.style.left = `${Math.max(0, modalX)}px`; paintModal.style.top = `${Math.max(0, modalY)}px`;
+                var containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
+                var modalX = Math.min(pos.clientX - containerRect.left + 10, containerRect.width - 300);
+                var modalY = Math.min(pos.clientY - containerRect.top + 10, containerRect.height - 120);
+                paintModal.style.left = Math.max(0, modalX) + 'px'; paintModal.style.top = Math.max(0, modalY) + 'px';
                 paintModal.classList.remove('hidden'); paintInput.value = ''; autocompleteList.classList.add('hidden'); paintInput.focus();
             }
         }
 
         if(canvas) {
             canvas.addEventListener('mousedown', handlePointerDown); canvas.addEventListener('mousemove', handlePointerMove); canvas.addEventListener('mouseup', handlePointerUp);
-            canvas.addEventListener('mouseleave', () => { if(isDragging) { isDragging=false; dragIndex=-1; canvas.style.cursor='crosshair'; drawCanvas(); } });
+            canvas.addEventListener('mouseleave', function() { if(isDragging) { isDragging=false; dragIndex=-1; canvas.style.cursor='crosshair'; drawCanvas(); } });
             canvas.addEventListener('touchstart', handlePointerDown, {passive: false}); canvas.addEventListener('touchmove', handlePointerMove, {passive: false}); canvas.addEventListener('touchend', handlePointerUp);
         }
 
         if(paintInput) {
             paintInput.addEventListener('input', function() {
-                const keyword = this.value.trim().toLowerCase(); autocompleteList.innerHTML = '';
+                var keyword = this.value.trim().toLowerCase(); autocompleteList.innerHTML = '';
                 if (!keyword) { autocompleteList.classList.add('hidden'); return; }
                 
-                const normalizedKeyword = keyword.replace(/[-\s]/g, '');
-                const availableInventory = myPaintInventory.filter(p => p.status === '所持');
+                var normalizedKeyword = keyword.replace(/[-\s]/g, '');
+                var availableInventory = myPaintInventory.filter(function(p) { return p.status === '所持'; });
                 
-                const matches = availableInventory.filter(p => {
-                    const normId = p.id.toLowerCase().replace(/[-\s]/g, '');
-                    const normName = p.name.toLowerCase().replace(/[-\s]/g, '');
-                    const normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
+                var matches = availableInventory.filter(function(p) {
+                    var normId = p.id.toLowerCase().replace(/[-\s]/g, '');
+                    var normName = p.name.toLowerCase().replace(/[-\s]/g, '');
+                    var normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
                     return normId.includes(normalizedKeyword) || normName.includes(normalizedKeyword) || normBrand.includes(normalizedKeyword);
                 });
 
-                matches.sort((a, b) => {
-                    const aId = a.id.toLowerCase().replace(/[-\s]/g, ''); const bId = b.id.toLowerCase().replace(/[-\s]/g, '');
+                matches.sort(function(a, b) {
+                    var aId = a.id.toLowerCase().replace(/[-\s]/g, ''); var bId = b.id.toLowerCase().replace(/[-\s]/g, '');
                     if (aId === normalizedKeyword) return -1; if (bId === normalizedKeyword) return 1;
                     if (aId.startsWith(normalizedKeyword) && !bId.startsWith(normalizedKeyword)) return -1;
                     if (!aId.startsWith(normalizedKeyword) && bId.startsWith(normalizedKeyword)) return 1;
@@ -1085,12 +1072,12 @@
 
                 if (matches.length > 0) {
                     autocompleteList.classList.remove('hidden');
-                    matches.forEach(match => {
-                        const li = document.createElement('li'); li.className = 'p-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0 text-gray-700';
-                        const qtyColor = match.qty > 0 ? 'text-green-600' : 'text-red-500';
-                        let refHtml = match.ref ? `<div class="text-[10px] text-gray-400 truncate mt-0.5">參考: ${match.ref}</div>` : '';
-                        li.innerHTML = `<div class="flex justify-between items-center"><span class="font-bold">${match.name}</span><div class="flex items-center text-xs"><span class="${qtyColor} font-bold mr-2">庫存:${match.qty}</span><span class="text-slate-400">${match.brand}</span></div></div>${refHtml}`;
-                        li.addEventListener('click', () => {
+                    matches.forEach(function(match) {
+                        var li = document.createElement('li'); li.className = 'p-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0 text-gray-700';
+                        var qtyColor = match.qty > 0 ? 'text-green-600' : 'text-red-500';
+                        var refHtml = match.ref ? '<div class="text-[10px] text-gray-400 truncate mt-0.5">參考: ' + match.ref + '</div>' : '';
+                        li.innerHTML = '<div class="flex justify-between items-center"><span class="font-bold">' + match.name + '</span><div class="flex items-center text-xs"><span class="' + qtyColor + ' font-bold mr-2">庫存:' + match.qty + '</span><span class="text-slate-400">' + match.brand + '</span></div></div>' + refHtml;
+                        li.addEventListener('click', function() {
                             if(match.qty <= 0) alert("警告：庫存為「0」。");
                             paintInput.value = match.name; autocompleteList.classList.add('hidden');
                         });
@@ -1100,14 +1087,14 @@
             });
         }
 
-        document.getElementById('cancelPaint')?.addEventListener('click', () => { paintModal.classList.add('hidden'); autocompleteList.classList.add('hidden'); tempCoord = null; });
-        document.getElementById('savePaint')?.addEventListener('click', () => {
-            const paintName = paintInput.value.trim();
+        bindClick('cancelPaint', function() { paintModal.classList.add('hidden'); autocompleteList.classList.add('hidden'); tempCoord = null; });
+        bindClick('savePaint', function() {
+            var paintName = paintInput.value.trim();
             if (paintName && tempCoord) {
-                const isLeftHalf = tempCoord.x < canvas.width / 2; 
-                const defaultLabelX = isLeftHalf ? Math.min(50, canvas.width*0.1) : canvas.width - Math.min(250, canvas.width*0.4); 
-                const defaultLabelY = Math.max(10, tempCoord.y - 20);
-                const matchedPaint = myPaintInventory.find(p => p.name === paintName); const brandName = matchedPaint ? matchedPaint.brand : 'その他';
+                var isLeftHalf = tempCoord.x < canvas.width / 2; 
+                var defaultLabelX = isLeftHalf ? Math.min(50, canvas.width*0.1) : canvas.width - Math.min(250, canvas.width*0.4); 
+                var defaultLabelY = Math.max(10, tempCoord.y - 20);
+                var matchedPaint = myPaintInventory.find(function(p) { return p.name === paintName; }); var brandName = matchedPaint ? matchedPaint.brand : 'その他';
                 markers.push({ x: tempCoord.x, y: tempCoord.y, name: paintName, brand: brandName, labelX: defaultLabelX, labelY: defaultLabelY, hitBox: null });
                 drawCanvas(); updateProjectBomList();
             }
@@ -1119,18 +1106,18 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             if(uploadedImage.src) ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
             
-            const baseFontSize = Math.max(16, Math.min(32, Math.floor(canvas.width * 0.025)));
+            var baseFontSize = Math.max(16, Math.min(32, Math.floor(canvas.width * 0.025)));
             
-            markers.forEach((marker, index) => {
-                let { x, y, name, labelX, labelY } = marker;
+            markers.forEach(function(marker, index) {
+                var x = marker.x; var y = marker.y; var name = marker.name; var labelX = marker.labelX; var labelY = marker.labelY;
                 
                 ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.fillStyle = '#ef4444'; ctx.fill(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
                 
-                ctx.font = `bold ${baseFontSize}px sans-serif`; 
-                const textStr = `${index + 1}. ${name}`; 
-                const textWidth = ctx.measureText(textStr).width; 
-                const boxWidth = textWidth + 20; 
-                const boxHeight = baseFontSize + 16; 
+                ctx.font = 'bold ' + baseFontSize + 'px sans-serif'; 
+                var textStr = (index + 1) + '. ' + name; 
+                var textWidth = ctx.measureText(textStr).width; 
+                var boxWidth = textWidth + 20; 
+                var boxHeight = baseFontSize + 16; 
                 
                 if (labelX + boxWidth > canvas.width - 5) labelX = canvas.width - boxWidth - 5;
                 if (labelX < 5) labelX = 5;
@@ -1142,10 +1129,10 @@
                 marker.hitBox = { x: labelX, y: labelY, w: boxWidth, h: boxHeight };
                 
                 ctx.beginPath(); ctx.moveTo(x, y); 
-                const labelCenterX = labelX + boxWidth / 2; 
-                const labelCenterY = labelY + boxHeight / 2; 
-                const midX = x + (labelCenterX - x) * 0.5; 
-                const midY = y - (boxHeight/2); 
+                var labelCenterX = labelX + boxWidth / 2; 
+                var labelCenterY = labelY + boxHeight / 2; 
+                var midX = x + (labelCenterX - x) * 0.5; 
+                var midY = y - (boxHeight/2); 
                 ctx.lineTo(midX, midY); ctx.lineTo(labelCenterX, labelCenterY);
                 ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 4; ctx.stroke(); 
                 ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.stroke(); 
@@ -1161,75 +1148,79 @@
             if(!paintListUI) return;
             paintListUI.innerHTML = '';
             if (markers.length === 0) { paintListUI.innerHTML = '<p class="text-sm text-gray-500 italic">尚未登錄任何塗料。</p>'; return; }
-            const groupedMarkers = markers.reduce((acc, marker, originalIndex) => {
-                const brand = marker.brand || 'その他'; if (!acc[brand]) acc[brand] = []; acc[brand].push({ ...marker, displayIndex: originalIndex + 1 }); return acc;
+            var groupedMarkers = markers.reduce(function(acc, marker, originalIndex) {
+                var brand = marker.brand || 'その他'; if (!acc[brand]) acc[brand] = []; acc[brand].push({ marker: marker, displayIndex: originalIndex + 1 }); return acc;
             }, {});
-            Object.keys(groupedMarkers).sort().forEach(brand => {
-                const brandHeader = document.createElement('h3'); brandHeader.className = 'font-bold text-sm text-slate-700 mt-4 mb-2 bg-slate-200 px-3 py-1 rounded-md inline-block'; brandHeader.textContent = `■ ${brand}`; paintListUI.appendChild(brandHeader);
-                const ul = document.createElement('ul'); ul.className = 'space-y-2 ml-2';
-                groupedMarkers[brand].forEach(marker => {
-                    const li = document.createElement('li'); li.className = 'flex items-center p-2 bg-white border border-gray-200 rounded shadow-sm';
-                    li.innerHTML = `<span class="flex-shrink-0 w-7 h-7 flex items-center justify-center bg-red-100 text-red-600 font-bold rounded-full mr-3 border border-red-200 text-sm">${marker.displayIndex}</span><div class="flex-grow"><span class="font-semibold text-gray-800 text-sm">${marker.name}</span></div>`;
+            Object.keys(groupedMarkers).sort().forEach(function(brand) {
+                var brandHeader = document.createElement('h3'); brandHeader.className = 'font-bold text-sm text-slate-700 mt-4 mb-2 bg-slate-200 px-3 py-1 rounded-md inline-block'; brandHeader.textContent = '■ ' + brand; paintListUI.appendChild(brandHeader);
+                var ul = document.createElement('ul'); ul.className = 'space-y-2 ml-2';
+                groupedMarkers[brand].forEach(function(item) {
+                    var li = document.createElement('li'); li.className = 'flex items-center p-2 bg-white border border-gray-200 rounded shadow-sm';
+                    li.innerHTML = '<span class="flex-shrink-0 w-7 h-7 flex items-center justify-center bg-red-100 text-red-600 font-bold rounded-full mr-3 border border-red-200 text-sm">' + item.displayIndex + '</span><div class="flex-grow"><span class="font-semibold text-gray-800 text-sm">' + item.marker.name + '</span></div>';
                     ul.appendChild(li);
                 });
                 paintListUI.appendChild(ul);
             });
         }
-        document.getElementById('downloadBtn')?.addEventListener('click', () => {
+        
+        bindClick('downloadBtn', function() {
             if (markers.length === 0 && !uploadedImage.src) return;
-            const link = document.createElement('a'); link.download = `${document.getElementById('projectName').value.trim() || 'project'}_blueprint.png`; link.href = canvas.toDataURL('image/png'); link.click();
+            var link = document.createElement('a'); link.download = (document.getElementById('projectName').value.trim() || 'project') + '_blueprint.png'; link.href = canvas.toDataURL('image/png'); link.click();
         });
 
         // === 7. Inventory Logic (在庫管理 + MasterDB Search) ===
-        let currentTabStatus = '所持';
-        const inventoryListUI = document.getElementById('inventoryListUI');
+        var currentTabStatus = '所持';
+        var inventoryListUI = document.getElementById('inventoryListUI');
         
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold'); b.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50'); });
-                const target = e.currentTarget; target.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50'); target.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold');
+        document.querySelectorAll('.tab-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold'); b.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50'); });
+                var target = e.currentTarget; target.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50'); target.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold');
                 currentTabStatus = target.getAttribute('data-status');
                 renderInventoryList();
             });
         });
 
         function updateInvFilterOptions() {
-            const filterMaker = document.getElementById('invFilterMaker');
-            const filterType = document.getElementById('invFilterType');
+            var filterMaker = document.getElementById('invFilterMaker');
+            var filterType = document.getElementById('invFilterType');
             if(!filterMaker || !filterType) return;
-            const currentMaker = filterMaker.value; const currentType = filterType.value;
-            const uniqueMakers = [...new Set(myPaintInventory.map(p => p.brand))].filter(Boolean).sort();
-            const uniqueTypes = [...new Set(myPaintInventory.map(p => p.type))].filter(Boolean).sort();
+            var currentMaker = filterMaker.value; var currentType = filterType.value;
+            var uniqueMakers = []; var uniqueTypes = [];
+            myPaintInventory.forEach(function(p) { if(p.brand && uniqueMakers.indexOf(p.brand) === -1) uniqueMakers.push(p.brand); if(p.type && uniqueTypes.indexOf(p.type) === -1) uniqueTypes.push(p.type); });
+            uniqueMakers.sort(); uniqueTypes.sort();
 
-            filterMaker.innerHTML = '<option value="ALL">廠商: 全部</option>'; uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
-            filterType.innerHTML = '<option value="ALL">種類: 全部</option>'; uniqueTypes.forEach(t => filterType.innerHTML += `<option value="${t}">${t}</option>`);
+            filterMaker.innerHTML = '<option value="ALL">廠商: 全部</option>'; uniqueMakers.forEach(function(m) { filterMaker.innerHTML += '<option value="' + m + '">' + m + '</option>'; });
+            filterType.innerHTML = '<option value="ALL">種類: 全部</option>'; uniqueTypes.forEach(function(t) { filterType.innerHTML += '<option value="' + t + '">' + t + '</option>'; });
 
-            if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
-            if (uniqueTypes.includes(currentType)) filterType.value = currentType;
+            if (uniqueMakers.indexOf(currentMaker) !== -1) filterMaker.value = currentMaker;
+            if (uniqueTypes.indexOf(currentType) !== -1) filterType.value = currentType;
         }
 
-        document.getElementById('invFilterMaker')?.addEventListener('change', (e) => { trackSearch('inventory', 'maker', e.target.value); renderInventoryList(); });
-        document.getElementById('invFilterType')?.addEventListener('change', (e) => { trackSearch('inventory', 'type', e.target.value); renderInventoryList(); });
+        var invFilterMakerEl = document.getElementById('invFilterMaker');
+        if(invFilterMakerEl) invFilterMakerEl.addEventListener('change', function(e) { trackSearch('inventory', 'maker', e.target.value); renderInventoryList(); });
+        var invFilterTypeEl = document.getElementById('invFilterType');
+        if(invFilterTypeEl) invFilterTypeEl.addEventListener('change', function(e) { trackSearch('inventory', 'type', e.target.value); renderInventoryList(); });
 
-        const masterSearchInput = document.getElementById('masterSearchInput');
-        const masterAutocompleteList = document.getElementById('masterAutocompleteList');
+        var masterSearchInput = document.getElementById('masterSearchInput');
+        var masterAutocompleteList = document.getElementById('masterAutocompleteList');
         
         if(masterSearchInput) {
             masterSearchInput.addEventListener('input', function() {
-                const keyword = this.value.trim().toLowerCase(); masterAutocompleteList.innerHTML = '';
+                var keyword = this.value.trim().toLowerCase(); masterAutocompleteList.innerHTML = '';
                 if (!keyword) { masterAutocompleteList.classList.add('hidden'); return; }
                 
-                const normalizedKeyword = keyword.replace(/[-\s]/g, '');
+                var normalizedKeyword = keyword.replace(/[-\s]/g, '');
 
-                const matches = masterPaintDB.filter(p => {
-                    const normId = p.id.toLowerCase().replace(/[-\s]/g, '');
-                    const normName = p.name.toLowerCase().replace(/[-\s]/g, '');
-                    const normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
+                var matches = masterPaintDB.filter(function(p) {
+                    var normId = p.id.toLowerCase().replace(/[-\s]/g, '');
+                    var normName = p.name.toLowerCase().replace(/[-\s]/g, '');
+                    var normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
                     return normId.includes(normalizedKeyword) || normName.includes(normalizedKeyword) || normBrand.includes(normalizedKeyword);
                 });
 
-                matches.sort((a, b) => {
-                    const aId = a.id.toLowerCase().replace(/[-\s]/g, ''); const bId = b.id.toLowerCase().replace(/[-\s]/g, '');
+                matches.sort(function(a, b) {
+                    var aId = a.id.toLowerCase().replace(/[-\s]/g, ''); var bId = b.id.toLowerCase().replace(/[-\s]/g, '');
                     if (aId === normalizedKeyword) return -1; if (bId === normalizedKeyword) return 1;
                     if (aId.startsWith(normalizedKeyword) && !bId.startsWith(normalizedKeyword)) return -1;
                     if (!aId.startsWith(normalizedKeyword) && bId.startsWith(normalizedKeyword)) return 1;
@@ -1238,22 +1229,15 @@
 
                 if (matches.length > 0) {
                     masterAutocompleteList.classList.remove('hidden');
-                    const displayMatches = matches.slice(0, 50); 
-                    displayMatches.forEach(match => {
-                        const li = document.createElement('li'); li.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 flex justify-between items-center';
-                        let refHtml = match.ref ? `<span class="text-[10px] text-indigo-500 mt-1 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${match.ref}</span>` : '';
+                    var displayMatches = matches.slice(0, 50); 
+                    displayMatches.forEach(function(match) {
+                        var li = document.createElement('li'); li.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 flex justify-between items-center';
+                        var refHtml = match.ref ? '<span class="text-[10px] text-indigo-500 mt-1 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>' + match.ref + '</span>' : '';
                         
-                        li.innerHTML = `
-                            <div class="flex flex-col">
-                                <span class="font-bold text-gray-800 text-sm">${match.id} ${match.name}</span>
-                                <span class="text-xs text-slate-500">${match.brand} / ${match.series} / ${match.type}</span>
-                                ${refHtml}
-                            </div>
-                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">加入 +</span>
-                        `;
-                        li.addEventListener('click', () => {
-                            let targetStatus = (currentTabStatus === '欲しい') ? '欲しい' : '所持'; let targetFav = (currentTabStatus === 'お気に入り');
-                            const existing = myPaintInventory.find(p => p.id === match.id && p.brand === match.brand && p.series === match.series);
+                        li.innerHTML = '<div class="flex flex-col"><span class="font-bold text-gray-800 text-sm">' + match.id + ' ' + match.name + '</span><span class="text-xs text-slate-500">' + match.brand + ' / ' + match.series + ' / ' + match.type + '</span>' + refHtml + '</div><span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">加入 +</span>';
+                        li.addEventListener('click', function() {
+                            var targetStatus = (currentTabStatus === '欲しい') ? '欲しい' : '所持'; var targetFav = (currentTabStatus === 'お気に入り');
+                            var existing = myPaintInventory.find(function(p) { return p.id === match.id && p.brand === match.brand && p.series === match.series; });
                             if (existing) {
                                 if (targetStatus === '所持') { existing.qty += 1; existing.status = '所持'; } 
                                 else if (targetStatus === '欲しい' && existing.status !== '所持') { existing.qty += 1; }
@@ -1261,7 +1245,7 @@
                             } else {
                                 myPaintInventory.unshift({ 
                                     uid: generateUid(), brand: match.brand, id: match.id, 
-                                    name: `${match.brand.substring(0,3)} ${match.id} ${match.name}`, 
+                                    name: match.brand.substring(0,3) + ' ' + match.id + ' ' + match.name, 
                                     status: targetStatus, qty: targetStatus === '所持' ? 1 : 0, 
                                     isFavorite: targetFav, type: match.type || 'その他',
                                     series: match.series || '', ref: match.ref || ''
@@ -1278,97 +1262,80 @@
 
         function renderInventoryList() {
             updateInvFilterOptions(); renderQuickFilters('inventory');
-            const makerFilterVal = document.getElementById('invFilterMaker')?.value || 'ALL';
-            const typeFilterVal = document.getElementById('invFilterType')?.value || 'ALL';
+            var makerFilterVal = document.getElementById('invFilterMaker') ? document.getElementById('invFilterMaker').value : 'ALL';
+            var typeFilterVal = document.getElementById('invFilterType') ? document.getElementById('invFilterType').value : 'ALL';
 
             if(!inventoryListUI) return;
             inventoryListUI.innerHTML = '';
-            let filteredInventory = currentTabStatus === 'お気に入り' ? myPaintInventory.filter(item => item.isFavorite) : myPaintInventory.filter(item => item.status === currentTabStatus);
+            var filteredInventory = currentTabStatus === 'お気に入り' ? myPaintInventory.filter(function(item) { return item.isFavorite; }) : myPaintInventory.filter(function(item) { return item.status === currentTabStatus; });
 
-            filteredInventory = filteredInventory.filter(item => {
+            filteredInventory = filteredInventory.filter(function(item) {
                 return (makerFilterVal === 'ALL' || item.brand === makerFilterVal) && (typeFilterVal === 'ALL' || item.type === typeFilterVal);
             });
 
-            filteredInventory.sort((a, b) => a.brand.localeCompare(b.brand));
-            if(filteredInventory.length === 0) { inventoryListUI.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">此分類尚無塗料。</div>`; return; }
+            filteredInventory.sort(function(a, b) { return a.brand.localeCompare(b.brand); });
+            if(filteredInventory.length === 0) { inventoryListUI.innerHTML = '<div class="text-center py-8 text-gray-400 text-sm">此分類尚無塗料。</div>'; return; }
 
-            filteredInventory.forEach(item => {
-                const li = document.createElement('li'); li.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex flex-col justify-between';
-                let brandColor = 'bg-slate-200 text-slate-700';
+            filteredInventory.forEach(function(item) {
+                var li = document.createElement('li'); li.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex flex-col justify-between';
+                var brandColor = 'bg-slate-200 text-slate-700';
                 if(item.brand.includes('ガイア')) brandColor = 'bg-green-100 text-green-700';
                 else if(item.brand.includes('GSI')) brandColor = 'bg-blue-100 text-blue-700';
                 else if(item.brand.includes('タミヤ')) brandColor = 'bg-red-100 text-red-700';
 
-                const heartColor = item.isFavorite ? 'text-red-500' : 'text-gray-300 hover:text-red-400';
-                const heartFill = item.isFavorite ? 'currentColor' : 'none';
-                let purchaseBtnHtml = '';
+                var heartColor = item.isFavorite ? 'text-red-500' : 'text-gray-300 hover:text-red-400';
+                var heartFill = item.isFavorite ? 'currentColor' : 'none';
+                var purchaseBtnHtml = '';
                 if (item.status === '欲しい' && item.qty > 0) {
-                    purchaseBtnHtml = `<div class="mt-3 pt-2 border-t border-gray-100 flex justify-end"><button onclick="window.purchaseItem('${item.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>購入</button></div>`;
+                    purchaseBtnHtml = '<div class="mt-3 pt-2 border-t border-gray-100 flex justify-end"><button onclick="window.purchaseItem(\'' + item.uid + '\')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>購入</button></div>';
                 }
 
-                let refHtml = item.ref ? `<div class="text-[10px] text-indigo-500 mt-1">參考: ${item.ref}</div>` : '';
+                var refHtml = item.ref ? '<div class="text-[10px] text-indigo-500 mt-1">參考: ' + item.ref + '</div>' : '';
 
-                li.innerHTML = `
-                    <div class="flex flex-col md:flex-row md:items-center justify-between">
-                        <div class="mb-2 md:mb-0">
-                            <div class="flex items-center mb-1">
-                                <span class="inline-block px-2 py-0.5 ${brandColor} text-[10px] font-bold rounded mr-2">${item.brand}</span>
-                                <span class="text-[10px] bg-yellow-100 text-yellow-800 font-bold px-2 py-0.5 rounded mr-2 border border-yellow-200">${item.type || 'その他'}</span>
-                                ${item.series ? `<span class="text-[10px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded mr-2">${item.series}</span>` : ''}
-                                <span class="text-xs font-mono bg-gray-100 px-1 rounded text-gray-600">${item.id}</span>
-                            </div>
-                            <div class="font-bold text-gray-800 text-sm">${item.name}</div>
-                            ${refHtml}
-                        </div>
-                        <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-3 bg-gray-50 p-1.5 rounded border border-gray-100 mt-2 md:mt-0">
-                            <button onclick="window.toggleFavorite('${item.uid}')" class="${heartColor} p-1 transition" title="加入最愛"><svg class="w-6 h-6" fill="${heartFill}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></button>
-                            <select onchange="window.updateItemStatus('${item.uid}', this.value)" class="text-xs border border-gray-300 rounded p-1 bg-white outline-none focus:ring-1 focus:ring-blue-500"><option value="所持" ${item.status === '所持' ? 'selected' : ''}>所持 (擁有)</option><option value="欲しい" ${item.status === '欲しい' ? 'selected' : ''}>欲しい (想買)</option></select>
-                            <div class="flex items-center border border-gray-300 rounded bg-white h-8"><button onclick="window.updateItemQty('${item.uid}', -1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-red-500 transition h-full font-bold">-</button><input type="number" readonly value="${item.qty}" class="w-8 text-center text-sm font-bold text-gray-700 border-x border-gray-200 h-full outline-none bg-transparent"><button onclick="window.updateItemQty('${item.uid}', 1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-blue-500 transition h-full font-bold">+</button></div>
-                            <button onclick="window.removeItem('${item.uid}')" class="text-red-400 hover:text-red-600 p-1 transition" title="刪除"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                        </div>
-                    </div>
-                    ${purchaseBtnHtml}
-                `;
+                li.innerHTML = '<div class="flex flex-col md:flex-row md:items-center justify-between"><div class="mb-2 md:mb-0"><div class="flex items-center mb-1"><span class="inline-block px-2 py-0.5 ' + brandColor + ' text-[10px] font-bold rounded mr-2">' + item.brand + '</span><span class="text-[10px] bg-yellow-100 text-yellow-800 font-bold px-2 py-0.5 rounded mr-2 border border-yellow-200">' + (item.type || 'その他') + '</span>' + (item.series ? '<span class="text-[10px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded mr-2">' + item.series + '</span>' : '') + '<span class="text-xs font-mono bg-gray-100 px-1 rounded text-gray-600">' + item.id + '</span></div><div class="font-bold text-gray-800 text-sm">' + item.name + '</div>' + refHtml + '</div><div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-3 bg-gray-50 p-1.5 rounded border border-gray-100 mt-2 md:mt-0"><button onclick="window.toggleFavorite(\'' + item.uid + '\')" class="' + heartColor + ' p-1 transition" title="加入最愛"><svg class="w-6 h-6" fill="' + heartFill + '" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></button><select onchange="window.updateItemStatus(\'' + item.uid + '\', this.value)" class="text-xs border border-gray-300 rounded p-1 bg-white outline-none focus:ring-1 focus:ring-blue-500"><option value="所持" ' + (item.status === '所持' ? 'selected' : '') + '>所持 (擁有)</option><option value="欲しい" ' + (item.status === '欲しい' ? 'selected' : '') + '>欲しい (想買)</option></select><div class="flex items-center border border-gray-300 rounded bg-white h-8"><button onclick="window.updateItemQty(\'' + item.uid + '\', -1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-red-500 transition h-full font-bold">-</button><input type="number" readonly value="' + item.qty + '" class="w-8 text-center text-sm font-bold text-gray-700 border-x border-gray-200 h-full outline-none bg-transparent"><button onclick="window.updateItemQty(\'' + item.uid + '\', 1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-blue-500 transition h-full font-bold">+</button></div><button onclick="window.removeItem(\'' + item.uid + '\')" class="text-red-400 hover:text-red-600 p-1 transition" title="刪除"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div></div>' + purchaseBtnHtml;
                 inventoryListUI.appendChild(li);
             });
         }
 
-        window.updateItemStatus = (uid, newStatus) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.status = newStatus; saveInventory(); renderInventoryList(); } }
-        window.updateItemQty = (uid, delta) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.qty += delta; if(item.qty < 0) item.qty = 0; saveInventory(); renderInventoryList(); } }
-        window.removeItem = (uid) => { if(confirm('確定要刪除嗎？')) { myPaintInventory = myPaintInventory.filter(p => p.uid !== uid); saveInventory(); renderInventoryList(); } }
-        window.toggleFavorite = (uid) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.isFavorite = !item.isFavorite; saveInventory(); renderInventoryList(); } }
-        window.purchaseItem = (uid) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.status = '所持'; if(item.qty <= 0) item.qty = 1; saveInventory(); renderInventoryList(); } }
+        window.updateItemStatus = function(uid, newStatus) { var item = myPaintInventory.find(function(p) { return p.uid === uid; }); if(item) { item.status = newStatus; saveInventory(); renderInventoryList(); } };
+        window.updateItemQty = function(uid, delta) { var item = myPaintInventory.find(function(p) { return p.uid === uid; }); if(item) { item.qty += delta; if(item.qty < 0) item.qty = 0; saveInventory(); renderInventoryList(); } };
+        window.removeItem = function(uid) { if(confirm('確定要刪除嗎？')) { myPaintInventory = myPaintInventory.filter(function(p) { return p.uid !== uid; }); saveInventory(); renderInventoryList(); } };
+        window.toggleFavorite = function(uid) { var item = myPaintInventory.find(function(p) { return p.uid === uid; }); if(item) { item.isFavorite = !item.isFavorite; saveInventory(); renderInventoryList(); } };
+        window.purchaseItem = function(uid) { var item = myPaintInventory.find(function(p) { return p.uid === uid; }); if(item) { item.status = '所持'; if(item.qty <= 0) item.qty = 1; saveInventory(); renderInventoryList(); } };
 
         // === 8. Settings Logic ===
-        document.getElementById('exportBtn')?.addEventListener('click', () => {
-            const data = { inventory: myPaintInventory, projects: myProjects, stats: searchStats };
-            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'paint_tracker_backup.json'; a.click(); URL.revokeObjectURL(url);
+        bindClick('exportBtn', function() {
+            var data = { inventory: myPaintInventory, projects: myProjects, stats: searchStats };
+            var blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a'); a.href = url; a.download = 'paint_tracker_backup.json'; a.click(); URL.revokeObjectURL(url);
         });
 
-        document.getElementById('importFile')?.addEventListener('change', (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    if(data.inventory) myPaintInventory = data.inventory;
-                    if(data.projects) myProjects = data.projects;
-                    if(data.stats) searchStats = data.stats;
-                    
-                    saveInventory(); saveProjects(); saveStats();
-                    alert('資料匯入完成！(Data Imported Successfully)'); 
-                    location.reload();
-                } catch(err) { 
-                    alert('檔案格式錯誤！(Invalid File Format)'); 
-                }
-            };
-            reader.readAsText(file);
-        });
+        var importFileEl = document.getElementById('importFile');
+        if(importFileEl) {
+            importFileEl.addEventListener('change', function(e) {
+                var file = e.target.files[0]; if(!file) return;
+                var reader = new FileReader();
+                reader.onload = function(event) {
+                    try {
+                        var data = JSON.parse(event.target.result);
+                        if(data.inventory) myPaintInventory = data.inventory;
+                        if(data.projects) myProjects = data.projects;
+                        if(data.stats) searchStats = data.stats;
+                        
+                        saveInventory(); saveProjects(); saveStats();
+                        alert('資料匯入完成！(Data Imported Successfully)'); 
+                        location.reload();
+                    } catch(err) { 
+                        alert('檔案格式錯誤！(Invalid File Format)'); 
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
 
-        document.getElementById('resetProjectsBtn')?.addEventListener('click', () => { if(confirm('確定要清除所有專案嗎？')) { myProjects = []; saveProjects(); renderProjectList(); alert('已清除。'); } });
-        document.getElementById('resetInventoryBtn')?.addEventListener('click', () => { if(confirm('確定要清空所有庫存資料嗎？')) { myPaintInventory = []; saveInventory(); renderInventoryList(); alert('已清除。'); } });
+        bindClick('resetProjectsBtn', function() { if(confirm('確定要清除所有專案嗎？')) { myProjects = []; saveProjects(); renderProjectList(); alert('已清除。'); } });
+        bindClick('resetInventoryBtn', function() { if(confirm('確定要清空所有庫存資料嗎？')) { myPaintInventory = []; saveInventory(); renderInventoryList(); alert('已清除。'); } });
 
         switchView('view-projects');
 
