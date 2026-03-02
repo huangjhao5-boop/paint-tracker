@@ -335,12 +335,17 @@
                         <div class="text-sm text-slate-500 font-bold">登入狀態</div>
                         <div id="loginStatusText" class="text-lg font-black text-gray-500">訪客模式 (Offline)</div>
                     </div>
-                    <button id="logoutBtn" class="hidden bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
-                        登出 (Logout)
-                    </button>
-                    <button id="reloginBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
-                        Google 登入
-                    </button>
+                    <div class="flex space-x-2">
+                        <button id="forceSyncBtn" class="hidden bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                            手動同步 (Sync)
+                        </button>
+                        <button id="logoutBtn" class="hidden bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                            登出 (Logout)
+                        </button>
+                        <button id="reloginBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                            Google 登入
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="space-y-6">
@@ -558,8 +563,10 @@
             
             var logoutBtn = document.getElementById('logoutBtn');
             var reloginBtn = document.getElementById('reloginBtn');
+            var forceSyncBtn = document.getElementById('forceSyncBtn');
             if(logoutBtn) logoutBtn.classList.add('hidden');
             if(reloginBtn) reloginBtn.classList.remove('hidden');
+            if(forceSyncBtn) forceSyncBtn.classList.add('hidden');
             
             var cloudStatusBadge = document.getElementById('cloudStatusBadge');
             if(cloudStatusBadge) {
@@ -623,8 +630,10 @@
                     
                     var logoutBtn = document.getElementById('logoutBtn');
                     var reloginBtn = document.getElementById('reloginBtn');
+                    var forceSyncBtn = document.getElementById('forceSyncBtn');
                     if(logoutBtn) logoutBtn.classList.remove('hidden');
                     if(reloginBtn) reloginBtn.classList.add('hidden');
+                    if(forceSyncBtn) forceSyncBtn.classList.remove('hidden');
 
                     var cloudStatusBadge = document.getElementById('cloudStatusBadge');
                     if(cloudStatusBadge) {
@@ -761,6 +770,55 @@
                 db.doc("artifacts/paint-tracker/users/" + userUid + "/data/stats").set({ data: searchStats }); 
             }
         }
+
+        // --- 手動同步邏輯 (Force Sync) ---
+        bindClick('forceSyncBtn', function() {
+            if (!userUid || !db) {
+                alert("未連線至雲端 (Offline)。");
+                return;
+            }
+            
+            var spinner = document.getElementById('cloudLoadingSpinner');
+            if(spinner) spinner.classList.remove('hidden');
+
+            isSyncData = true; // 鎖定寫入
+
+            // 使用 Promise.all 強制從伺服器 GET 最新資料 (忽略快取)
+            Promise.all([
+                db.doc("artifacts/paint-tracker/users/" + userUid + "/data/inventory").get(),
+                db.doc("artifacts/paint-tracker/users/" + userUid + "/data/projects").get(),
+                db.doc("artifacts/paint-tracker/users/" + userUid + "/data/stats").get()
+            ]).then(function(results) {
+                var invSnap = results[0];
+                var projSnap = results[1];
+                var statsSnap = results[2];
+
+                if(invSnap.exists) myPaintInventory = invSnap.data().items || [];
+                if(projSnap.exists) myProjects = projSnap.data().items || [];
+                if(statsSnap.exists) searchStats = statsSnap.data().data || { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } };
+
+                // 覆寫本地 SRAM
+                localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory));
+                localStorage.setItem('myProjectsV1', JSON.stringify(myProjects));
+                localStorage.setItem('paintTrackerStatsV1', JSON.stringify(searchStats));
+
+                // 重新渲染畫面
+                renderInventoryList();
+                renderProjectList();
+                renderDashboard();
+                updateInvFilterOptions();
+
+                isSyncData = false;
+                if(spinner) spinner.classList.add('hidden');
+                alert("手動同步完成！ (Sync Complete)");
+
+            }).catch(function(error) {
+                console.error("Force Sync Error:", error);
+                isSyncData = false;
+                if(spinner) spinner.classList.add('hidden');
+                alert("同步失敗，請檢查網路連線。");
+            });
+        });
 
         // === 以下為 UI 邏輯 ===
 
