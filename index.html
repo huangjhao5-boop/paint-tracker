@@ -25,7 +25,7 @@
     <div id="authOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <svg class="w-16 h-16 text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <h1 class="text-3xl font-black mb-2 tracking-wider">PAINT TRACKER</h1>
-        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">CLOUD SYNC SYSTEM V16</p>
+        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">CLOUD SYNC SYSTEM V17</p>
         
         <button id="googleLoginBtn" class="bg-white text-slate-800 px-6 py-3 rounded-full font-bold shadow-xl hover:bg-slate-100 transition transform hover:scale-105 flex items-center">
             <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -381,7 +381,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js"; // 1. 導入 Analytics 模組
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
         // ======================================================================
         // ⚠️【Firebase Config エリア】
@@ -403,7 +403,7 @@
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            analytics = getAnalytics(app); // 初始化 Analytics
+            analytics = getAnalytics(app); 
         } catch(e) {
             console.error("Firebase初期化エラー。", e);
         }
@@ -558,22 +558,17 @@
         let myProjects = [];
         let searchStats = { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } };
         let currentEditingProjectId = null; 
-        let isSyncing = false; // Firestoreからの読み込み中は上書き保存を防止するフラグ
+        let isSyncing = false;
 
         // === 2. Auth & Cloud Sync (SCADA 連携) ===
 
-        // Google ログイン処理 (null チェック追加)
         const loginBtn = document.getElementById('googleLoginBtn');
         if(loginBtn) {
             loginBtn.addEventListener('click', () => {
                 const authLoading = document.getElementById('authLoading');
                 const authError = document.getElementById('authError');
                 
-                // エラーメッセージをクリア
-                if(authError) {
-                    authError.classList.add('hidden');
-                    authError.textContent = '';
-                }
+                if(authError) { authError.classList.add('hidden'); authError.textContent = ''; }
 
                 if(!auth) { 
                     if(authError) {
@@ -589,7 +584,6 @@
                 signInWithPopup(auth, provider).catch(err => {
                     console.error("Login Error:", err);
                     if(authLoading) authLoading.classList.add('hidden');
-                    
                     if(authError) {
                         if(err.code === 'auth/configuration-not-found') {
                             authError.textContent = "Firebaseの設定エラー: プロジェクトIDが間違っているか、Identity Platformの設定が未完了です。Firebase Consoleを確認してください。";
@@ -602,15 +596,9 @@
             });
         }
 
-        // ログアウト処理 (null チェック追加)
         const logoutBtn = document.getElementById('logoutBtn');
-        if(logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                if(auth) signOut(auth);
-            });
-        }
+        if(logoutBtn) { logoutBtn.addEventListener('click', () => { if(auth) signOut(auth); }); }
 
-        // 認証状態の監視 (Auth Listener)
         if(auth) {
             onAuthStateChanged(auth, (user) => {
                 const overlay = document.getElementById('authOverlay');
@@ -619,28 +607,17 @@
                 if (user) {
                     userUid = user.uid;
                     if(loginStatusText) loginStatusText.textContent = user.displayName || "認証済み";
-                    if(overlay) {
-                        overlay.classList.add('opacity-0');
-                        setTimeout(() => overlay.style.display = 'none', 500);
-                    }
-                    
-                    // ローカルからクラウドへの移行処理 (初回のみ)
+                    if(overlay) { overlay.classList.add('opacity-0'); setTimeout(() => overlay.style.display = 'none', 500); }
                     migrateLocalToCloud();
-                    
-                    // クラウドDBの監視開始
                     startCloudSync();
                 } else {
                     userUid = null;
                     if(loginStatusText) loginStatusText.textContent = "未ログイン";
-                    if(overlay) {
-                        overlay.style.display = 'flex';
-                        setTimeout(() => overlay.classList.remove('opacity-0'), 50);
-                    }
+                    if(overlay) { overlay.style.display = 'flex'; setTimeout(() => overlay.classList.remove('opacity-0'), 50); }
                 }
             });
         }
 
-        // データ移行 (LocalSRAM -> CloudDB)
         function migrateLocalToCloud() {
             const localInv = localStorage.getItem('myPaintInventoryV3');
             const localProj = localStorage.getItem('myProjectsV1');
@@ -652,86 +629,50 @@
                 if (localProj) myProjects = JSON.parse(localProj);
                 if (localStats) searchStats = JSON.parse(localStats);
                 
-                saveInventory();
-                saveProjects();
-                saveStats();
+                saveInventory(); saveProjects(); saveStats();
 
                 localStorage.removeItem('myPaintInventoryV3');
                 localStorage.removeItem('myProjectsV1');
                 localStorage.removeItem('paintTrackerStatsV1');
-                console.log("クラウド移行完了");
             }
         }
 
-        // クラウドDBの監視 (Firestore onSnapshot)
         function startCloudSync() {
             if (!userUid || !db) return;
-
             const spinner = document.getElementById('cloudLoadingSpinner');
             if(spinner) spinner.classList.remove('hidden');
 
-            // 在庫データの監視
             onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), (docSnap) => {
                 isSyncing = true;
-                if (docSnap.exists()) {
-                    myPaintInventory = docSnap.data().items || [];
-                } else {
-                    myPaintInventory = [];
-                }
-                renderInventoryList();
-                renderDashboard();
-                updateInvFilterOptions();
+                if (docSnap.exists()) { myPaintInventory = docSnap.data().items || []; } else { myPaintInventory = []; }
+                renderInventoryList(); renderDashboard(); updateInvFilterOptions();
                 isSyncing = false;
                 if(spinner) spinner.classList.add('hidden');
-            }, (error) => {
-                console.error("同期エラー:", error);
-                if(spinner) spinner.classList.add('hidden');
-            });
+            }, (error) => { console.error("同期エラー:", error); if(spinner) spinner.classList.add('hidden'); });
 
-            // プロジェクトデータの監視
             onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), (docSnap) => {
                 isSyncing = true;
-                if (docSnap.exists()) {
-                    myProjects = docSnap.data().items || [];
-                } else {
-                    myProjects = [];
-                }
+                if (docSnap.exists()) { myProjects = docSnap.data().items || []; } else { myProjects = []; }
                 renderProjectList();
                 isSyncing = false;
             });
 
-            // 統計データの監視
             onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), (docSnap) => {
                 isSyncing = true;
-                if (docSnap.exists()) {
-                    searchStats = docSnap.data().data || { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } };
-                }
+                if (docSnap.exists()) { searchStats = docSnap.data().data || { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } }; }
                 isSyncing = false;
             });
         }
 
-        // === 3. クラウドへの書き込み処理 (Cloud Write) ===
-        function saveInventory() { 
-            if(isSyncing || !userUid || !db) return;
-            setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), { items: myPaintInventory }); 
-        }
-        function saveProjects() { 
-            if(isSyncing || !userUid || !db) return;
-            setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), { items: myProjects }); 
-        }
-        function saveStats() { 
-            if(isSyncing || !userUid || !db) return;
-            setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), { data: searchStats }); 
-        }
-
-        // === 以下、既存のUIロジック ===
+        function saveInventory() { if(isSyncing || !userUid || !db) return; setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), { items: myPaintInventory }); }
+        function saveProjects() { if(isSyncing || !userUid || !db) return; setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), { items: myProjects }); }
+        function saveStats() { if(isSyncing || !userUid || !db) return; setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), { data: searchStats }); }
 
         function trackSearch(context, category, value) {
             if (!value || value === 'ALL') return;
             if (!searchStats[context][category][value]) searchStats[context][category][value] = 0;
             searchStats[context][category][value]++;
-            saveStats();
-            renderQuickFilters(context);
+            saveStats(); renderQuickFilters(context);
         }
 
         function renderQuickFilters(context) {
@@ -739,7 +680,6 @@
             const container = document.getElementById(containerId);
             if(!container) return;
             container.innerHTML = '';
-
             let topTermsPerCategory = [];
             Object.keys(searchStats[context]).forEach(category => {
                 const terms = searchStats[context][category];
@@ -748,19 +688,11 @@
                 categoryTerms.sort((a, b) => b.count - a.count);
                 topTermsPerCategory = topTermsPerCategory.concat(categoryTerms.slice(0, 3));
             });
-
-            if (topTermsPerCategory.length === 0) {
-                container.innerHTML = '<span class="text-gray-400 italic">まだ履歴がありません</span>';
-                return;
-            }
-
+            if (topTermsPerCategory.length === 0) { container.innerHTML = '<span class="text-gray-400 italic">まだ履歴がありません</span>'; return; }
             topTermsPerCategory.forEach(term => {
                 const btn = document.createElement('button');
                 let prefix = '';
-                if(term.category === 'maker') prefix = '🏭 ';
-                else if(term.category === 'grade') prefix = '📏 ';
-                else if(term.category === 'type') prefix = '💧 ';
-
+                if(term.category === 'maker') prefix = '🏭 '; else if(term.category === 'grade') prefix = '📏 '; else if(term.category === 'type') prefix = '💧 ';
                 btn.className = 'bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold transition shadow-sm border border-blue-200';
                 btn.textContent = `${prefix}${term.value}`;
                 btn.onclick = () => window.applyQuickFilter(context, term.category, term.value);
@@ -770,12 +702,10 @@
 
         window.applyQuickFilter = function(context, category, value) {
             if (context === 'project') {
-                const selectId = category === 'maker' ? 'filterMaker' : 'filterGrade';
-                const el = document.getElementById(selectId);
+                const el = document.getElementById(category === 'maker' ? 'filterMaker' : 'filterGrade');
                 if(el) { el.value = value; renderProjectList(); }
             } else if (context === 'inventory') {
-                const selectId = category === 'maker' ? 'invFilterMaker' : 'invFilterType';
-                const el = document.getElementById(selectId);
+                const el = document.getElementById(category === 'maker' ? 'invFilterMaker' : 'invFilterType');
                 if(el) { el.value = value; renderInventoryList(); }
             }
         };
@@ -786,16 +716,13 @@
         function switchView(targetId) {
             navBtns.forEach(btn => {
                 if(btn.dataset.target === targetId) {
-                    btn.classList.add('text-blue-400', 'border-t-2', 'md:border-t-0', 'md:border-b-2', 'border-blue-400');
-                    btn.classList.remove('text-slate-300');
+                    btn.classList.add('text-blue-400', 'border-t-2', 'md:border-t-0', 'md:border-b-2', 'border-blue-400'); btn.classList.remove('text-slate-300');
                 } else {
-                    btn.classList.remove('text-blue-400', 'border-t-2', 'md:border-t-0', 'md:border-b-2', 'border-blue-400');
-                    btn.classList.add('text-slate-300');
+                    btn.classList.remove('text-blue-400', 'border-t-2', 'md:border-t-0', 'md:border-b-2', 'border-blue-400'); btn.classList.add('text-slate-300');
                 }
             });
             viewSections.forEach(view => {
-                if(view.id === targetId) view.classList.add(targetId === 'view-inventory' ? 'active-flex' : 'active');
-                else view.classList.remove('active', 'active-flex');
+                if(view.id === targetId) view.classList.add(targetId === 'view-inventory' ? 'active-flex' : 'active'); else view.classList.remove('active', 'active-flex');
             });
             if(targetId === 'view-inventory') renderInventoryList();
             if(targetId === 'view-projects') renderProjectList();
@@ -809,178 +736,84 @@
             const totalKinds = ownedItems.length;
             const wishlistItems = myPaintInventory.filter(p => p.status === '欲しい').length;
 
-            const statTotalQtyEl = document.getElementById('statTotalQty');
-            const statTotalKindsEl = document.getElementById('statTotalKinds');
-            const statWishlistEl = document.getElementById('statWishlist');
+            const statTotalQtyEl = document.getElementById('statTotalQty'); const statTotalKindsEl = document.getElementById('statTotalKinds'); const statWishlistEl = document.getElementById('statWishlist');
             const container = document.getElementById('brandStatsContainer');
 
             if(statTotalQtyEl) statTotalQtyEl.innerHTML = `${totalQty} <span class="text-base font-normal">本</span>`;
             if(statTotalKindsEl) statTotalKindsEl.innerHTML = `${totalKinds} <span class="text-base font-normal">種</span>`;
             if(statWishlistEl) statWishlistEl.innerHTML = `${wishlistItems} <span class="text-base font-normal">種</span>`;
-
-            if(!container) return;
-            container.innerHTML = '';
-
+            if(!container) return; container.innerHTML = '';
             if (totalQty === 0) { container.innerHTML = '<p class="text-sm text-gray-500 italic">データがありません。</p>'; return; }
 
             const brandCounts = ownedItems.reduce((acc, item) => { acc[item.brand] = (acc[item.brand] || 0) + item.qty; return acc; }, {});
             Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).forEach(([brand, count]) => {
                 const percentage = Math.round((count / totalQty) * 100);
                 let barColor = 'bg-slate-500';
-                if(brand.includes('ガイア')) barColor = 'bg-green-500';
-                else if(brand.includes('GSI')) barColor = 'bg-blue-500';
-                else if(brand.includes('タミヤ')) barColor = 'bg-red-500';
-
-                container.insertAdjacentHTML('beforeend', `
-                    <div class="mb-3">
-                        <div class="flex justify-between text-sm mb-1"><span class="font-bold text-gray-700">${brand}</span><span class="text-gray-500">${count}本 (${percentage}%)</span></div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${barColor} h-2.5 rounded-full" style="width: ${percentage}%"></div></div>
-                    </div>
-                `);
+                if(brand.includes('ガイア')) barColor = 'bg-green-500'; else if(brand.includes('GSI')) barColor = 'bg-blue-500'; else if(brand.includes('タミヤ')) barColor = 'bg-red-500';
+                container.insertAdjacentHTML('beforeend', `<div class="mb-3"><div class="flex justify-between text-sm mb-1"><span class="font-bold text-gray-700">${brand}</span><span class="text-gray-500">${count}本 (${percentage}%)</span></div><div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${barColor} h-2.5 rounded-full" style="width: ${percentage}%"></div></div></div>`);
             });
         }
 
         const projectGrid = document.getElementById('projectGrid');
-        
         function updateProjectFilterOptions() {
-            const filterMaker = document.getElementById('filterMaker');
-            const filterGrade = document.getElementById('filterGrade');
+            const filterMaker = document.getElementById('filterMaker'); const filterGrade = document.getElementById('filterGrade');
             if(!filterMaker || !filterGrade) return;
-
             const currentMaker = filterMaker.value; const currentGrade = filterGrade.value;
             const uniqueMakers = [...new Set(myProjects.map(p => p.maker))].filter(Boolean).sort();
             const uniqueGrades = [...new Set(myProjects.map(p => p.grade))].filter(Boolean).sort();
-
-            filterMaker.innerHTML = '<option value="ALL">すべて</option>';
-            uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
-            filterGrade.innerHTML = '<option value="ALL">すべて</option>';
-            uniqueGrades.forEach(g => filterGrade.innerHTML += `<option value="${g}">${g}</option>`);
-
+            filterMaker.innerHTML = '<option value="ALL">すべて</option>'; uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
+            filterGrade.innerHTML = '<option value="ALL">すべて</option>'; uniqueGrades.forEach(g => filterGrade.innerHTML += `<option value="${g}">${g}</option>`);
             if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
             if (uniqueGrades.includes(currentGrade)) filterGrade.value = currentGrade;
         }
 
-        const filterMakerEl = document.getElementById('filterMaker');
-        if(filterMakerEl) filterMakerEl.addEventListener('change', (e) => { trackSearch('project', 'maker', e.target.value); renderProjectList(); });
-        
-        const filterGradeEl = document.getElementById('filterGrade');
-        if(filterGradeEl) filterGradeEl.addEventListener('change', (e) => { trackSearch('project', 'grade', e.target.value); renderProjectList(); });
-        
-        const filterNameEl = document.getElementById('filterName');
-        if(filterNameEl) filterNameEl.addEventListener('input', renderProjectList);
+        document.getElementById('filterMaker')?.addEventListener('change', (e) => { trackSearch('project', 'maker', e.target.value); renderProjectList(); });
+        document.getElementById('filterGrade')?.addEventListener('change', (e) => { trackSearch('project', 'grade', e.target.value); renderProjectList(); });
+        document.getElementById('filterName')?.addEventListener('input', renderProjectList);
 
         function renderProjectList() {
             updateProjectFilterOptions(); renderQuickFilters('project');
             const makerFilterVal = document.getElementById('filterMaker')?.value || 'ALL';
             const gradeFilterVal = document.getElementById('filterGrade')?.value || 'ALL';
             const nameFilterVal = document.getElementById('filterName')?.value.toLowerCase() || '';
-
-            if(!projectGrid) return;
-            projectGrid.innerHTML = '';
-
-            const filteredProjects = myProjects.filter(proj => {
-                return (makerFilterVal === 'ALL' || proj.maker === makerFilterVal) && 
-                       (gradeFilterVal === 'ALL' || proj.grade === gradeFilterVal) && 
-                       (!nameFilterVal || (proj.name && proj.name.toLowerCase().includes(nameFilterVal)));
-            });
-
+            if(!projectGrid) return; projectGrid.innerHTML = '';
+            const filteredProjects = myProjects.filter(proj => { return (makerFilterVal === 'ALL' || proj.maker === makerFilterVal) && (gradeFilterVal === 'ALL' || proj.grade === gradeFilterVal) && (!nameFilterVal || (proj.name && proj.name.toLowerCase().includes(nameFilterVal))); });
             if(filteredProjects.length === 0) { projectGrid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400">プロジェクトが見つかりません。</div>'; return; }
 
             filteredProjects.forEach(proj => {
-                const dateStr = new Date(proj.updatedAt).toLocaleDateString('ja-JP');
-                const card = document.createElement('div');
+                const dateStr = new Date(proj.updatedAt).toLocaleDateString('ja-JP'); const card = document.createElement('div');
                 card.className = 'bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer flex flex-col';
-                card.innerHTML = `
-                    <div class="h-40 bg-gray-100 relative overflow-hidden flex items-center justify-center">
-                        ${proj.image ? `<img src="${proj.image}" class="object-cover w-full h-full opacity-90">` : `<span class="text-gray-400 text-sm">No Image</span>`}
-                        <div class="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">${proj.markers ? proj.markers.length : 0} 色</div>
-                    </div>
-                    <div class="p-4 flex-grow">
-                        <div class="flex justify-between items-start mb-2"><div><span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1">${proj.maker}</span><span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded">${proj.grade}</span></div></div>
-                        <h3 class="font-bold text-gray-800 text-lg mb-1 truncate">${proj.name || '名称未設定'}</h3>
-                        <p class="text-xs text-gray-400">更新: ${dateStr}</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 border-t border-gray-100 flex justify-end space-x-2"><button class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" onclick="deleteProject('${proj.id}', event)" title="削除"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>
-                `;
-                card.addEventListener('click', (e) => { if(!e.target.closest('button')) loadProjectToEditor(proj.id); });
-                projectGrid.appendChild(card);
+                card.innerHTML = `<div class="h-40 bg-gray-100 relative overflow-hidden flex items-center justify-center">${proj.image ? `<img src="${proj.image}" class="object-cover w-full h-full opacity-90">` : `<span class="text-gray-400 text-sm">No Image</span>`}<div class="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">${proj.markers ? proj.markers.length : 0} 色</div></div><div class="p-4 flex-grow"><div class="flex justify-between items-start mb-2"><div><span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1">${proj.maker}</span><span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded">${proj.grade}</span></div></div><h3 class="font-bold text-gray-800 text-lg mb-1 truncate">${proj.name || '名称未設定'}</h3><p class="text-xs text-gray-400">更新: ${dateStr}</p></div><div class="bg-gray-50 p-3 border-t border-gray-100 flex justify-end space-x-2"><button class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" onclick="deleteProject('${proj.id}', event)" title="削除"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>`;
+                card.addEventListener('click', (e) => { if(!e.target.closest('button')) loadProjectToEditor(proj.id); }); projectGrid.appendChild(card);
             });
         }
 
-        const createNewProjectBtn = document.getElementById('createNewProjectBtn');
-        if(createNewProjectBtn) {
-            createNewProjectBtn.addEventListener('click', () => {
-                currentEditingProjectId = generateUid();
-                document.getElementById('maker').selectedIndex = 0; document.getElementById('grade').selectedIndex = 0;
-                document.getElementById('customMaker').value = ''; document.getElementById('customMaker').classList.add('hidden');
-                document.getElementById('customGrade').value = ''; document.getElementById('customGrade').classList.add('hidden');
-                document.getElementById('projectName').value = ''; document.getElementById('imageLoader').value = '';
-                uploadedImage = new Image(); markers = [];
-                document.getElementById('paintCanvas').classList.add('hidden'); document.getElementById('placeholderText').classList.remove('hidden');
-                document.getElementById('canvasContainer').classList.add('p-6'); document.getElementById('downloadBtn').classList.add('hidden');
-                updateProjectBomList(); switchView('view-project-edit');
-            });
-        }
-        
+        document.getElementById('createNewProjectBtn')?.addEventListener('click', () => {
+            currentEditingProjectId = generateUid();
+            document.getElementById('maker').selectedIndex = 0; document.getElementById('grade').selectedIndex = 0;
+            document.getElementById('customMaker').value = ''; document.getElementById('customMaker').classList.add('hidden');
+            document.getElementById('customGrade').value = ''; document.getElementById('customGrade').classList.add('hidden');
+            document.getElementById('projectName').value = ''; document.getElementById('imageLoader').value = '';
+            uploadedImage = new Image(); markers = [];
+            document.getElementById('paintCanvas').classList.add('hidden'); document.getElementById('placeholderText').classList.remove('hidden');
+            document.getElementById('canvasContainer').classList.add('p-6'); document.getElementById('downloadBtn').classList.add('hidden');
+            updateProjectBomList(); switchView('view-project-edit');
+        });
         document.getElementById('backToProjectsBtn')?.addEventListener('click', () => switchView('view-projects'));
         document.getElementById('maker')?.addEventListener('change', function(e) { document.getElementById('customMaker').classList.toggle('hidden', e.target.value !== 'その他'); });
         document.getElementById('grade')?.addEventListener('change', function(e) { document.getElementById('customGrade').classList.toggle('hidden', e.target.value !== 'その他'); });
 
-        // --- 座標の圧縮によるズレ修正 (Scaling Logic) ---
         document.getElementById('saveProjectBtn')?.addEventListener('click', () => {
             if(!currentEditingProjectId) return;
-            let compressedImage = null;
-            let scaledMarkers = JSON.parse(JSON.stringify(markers)); // コピーを作成
-
-            if(uploadedImage.src && uploadedImage.src.startsWith('data:')) {
-                const offCanvas = document.createElement('canvas'); 
-                const offCtx = offCanvas.getContext('2d');
-                let w = uploadedImage.width; 
-                let h = uploadedImage.height;
-                let scale = 1;
-
-                // 圧縮時のリサイズによる座標ズレを防ぐため、スケール比率を計算
-                if(w > 1200) { 
-                    scale = 1200 / w;
-                    w = 1200; 
-                    h = Math.round(h * scale); 
-                }
-
-                offCanvas.width = w; offCanvas.height = h; 
-                offCtx.drawImage(uploadedImage, 0, 0, w, h);
-                compressedImage = offCanvas.toDataURL('image/jpeg', 0.8); // 画質を0.8に向上
-
-                // リサイズされた場合、マーカーの座標も等倍縮小する
-                if(scale !== 1) {
-                    scaledMarkers = scaledMarkers.map(m => ({
-                        ...m,
-                        x: m.x * scale,
-                        y: m.y * scale,
-                        labelX: m.labelX * scale,
-                        labelY: m.labelY * scale
-                    }));
-                }
-            }
-
+            // V17: 畫布座標不再經過二次壓縮變形，直接儲存目前的 uploadedImage.src
+            let compressedImage = uploadedImage.src && uploadedImage.src.startsWith('data:') ? uploadedImage.src : null;
             let finalMaker = document.getElementById('maker').value; if (finalMaker === 'その他') finalMaker = document.getElementById('customMaker').value.trim() || 'その他';
             let finalGrade = document.getElementById('grade').value; if (finalGrade === 'その他') finalGrade = document.getElementById('customGrade').value.trim() || 'その他';
 
-            const projData = { 
-                id: currentEditingProjectId, 
-                maker: finalMaker, 
-                grade: finalGrade, 
-                name: document.getElementById('projectName').value.trim(), 
-                image: compressedImage, 
-                markers: scaledMarkers, // 補正済みの座標を保存
-                updatedAt: Date.now() 
-            };
-
+            const projData = { id: currentEditingProjectId, maker: finalMaker, grade: finalGrade, name: document.getElementById('projectName').value.trim(), image: compressedImage, markers: JSON.parse(JSON.stringify(markers)), updatedAt: Date.now() };
             const idx = myProjects.findIndex(p => p.id === currentEditingProjectId);
             if(idx >= 0) { myProjects[idx] = projData; } else { myProjects.unshift(projData); }
-            
-            saveProjects(); 
-            renderProjectList(); 
-            switchView('view-projects');
+            saveProjects(); renderProjectList(); switchView('view-projects');
         });
 
         function loadProjectToEditor(id) {
@@ -1026,16 +859,32 @@
 
         let tempCoord = null; let isDragging = false; let dragIndex = -1; let dragOffsetX = 0; let dragOffsetY = 0; let mouseDownPos = {x: 0, y: 0};
 
+        // V17: 画像ロード時に【前処理】として縮小を行う。これにより座標ズレを根絶する。
         document.getElementById('imageLoader')?.addEventListener('change', function(e) {
             const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
             reader.onload = function(event) {
-                uploadedImage.onload = function() {
-                    canvas.width = uploadedImage.width; canvas.height = uploadedImage.height;
-                    canvas.classList.remove('hidden'); document.getElementById('downloadBtn').classList.remove('hidden');
-                    document.getElementById('placeholderText').classList.add('hidden'); document.getElementById('canvasContainer').classList.remove('p-6');
-                    markers = []; updateProjectBomList(); drawCanvas();
+                const tempImg = new Image();
+                tempImg.onload = function() {
+                    // 前処理（プレコンプレッション）
+                    let w = tempImg.width; let h = tempImg.height;
+                    const MAX_WIDTH = 1200;
+                    if(w > MAX_WIDTH) { h = Math.round(h * (MAX_WIDTH / w)); w = MAX_WIDTH; }
+                    
+                    const offCanvas = document.createElement('canvas');
+                    offCanvas.width = w; offCanvas.height = h;
+                    offCanvas.getContext('2d').drawImage(tempImg, 0, 0, w, h);
+                    
+                    uploadedImage = new Image();
+                    uploadedImage.onload = function() {
+                        canvas.width = uploadedImage.width; canvas.height = uploadedImage.height;
+                        canvas.classList.remove('hidden'); document.getElementById('downloadBtn').classList.remove('hidden');
+                        document.getElementById('placeholderText').classList.add('hidden'); document.getElementById('canvasContainer').classList.remove('p-6');
+                        markers = []; updateProjectBomList(); drawCanvas();
+                    }
+                    // 品質0.8で圧縮済みのデータをセットする
+                    uploadedImage.src = offCanvas.toDataURL('image/jpeg', 0.8);
                 }
-                uploadedImage.src = event.target.result;
+                tempImg.src = event.target.result;
             }
             reader.readAsDataURL(file);
         });
@@ -1065,7 +914,7 @@
                 pos = { x: (e.changedTouches[0].clientX - rect.left) * scaleX, y: (e.changedTouches[0].clientY - rect.top) * scaleY, clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
             } else if (e.clientX) { pos = getMousePos(e); }
 
-            if (isDragging) { isDragging = false; dragIndex = -1; canvas.style.cursor = 'crosshair'; drawCanvas(); return; } // ドラッグ後は画面外にはみ出ないよう再描画でクランプ
+            if (isDragging) { isDragging = false; dragIndex = -1; canvas.style.cursor = 'crosshair'; drawCanvas(); return; }
             const dist = Math.sqrt(Math.pow(pos.x - mouseDownPos.x, 2) + Math.pow(pos.y - mouseDownPos.y, 2));
             if (dist < 10 && !paintModal.classList.contains('hidden') === false) {
                 tempCoord = { x: pos.x, y: pos.y };
@@ -1128,7 +977,7 @@
             const paintName = paintInput.value.trim();
             if (paintName && tempCoord) {
                 const isLeftHalf = tempCoord.x < canvas.width / 2; 
-                // 初期位置もレスポンシブに
+                // V17: ラベルの初期位置をキャンバスサイズに比例させる
                 const defaultLabelX = isLeftHalf ? Math.min(50, canvas.width*0.1) : canvas.width - Math.min(250, canvas.width*0.4); 
                 const defaultLabelY = Math.max(10, tempCoord.y - 20);
                 const matchedPaint = myPaintInventory.find(p => p.name === paintName); const brandName = matchedPaint ? matchedPaint.brand : 'その他';
@@ -1138,14 +987,14 @@
             paintModal.classList.add('hidden'); autocompleteList.classList.add('hidden'); tempCoord = null;
         });
 
-        // --- 描画ロジックの改善 (文字サイズ可変＆画面外へのはみ出し防止) ---
+        // --- V17: 描画ロジックの改善 (文字サイズ可変＆画面外へのはみ出し防止) ---
         function drawCanvas() {
             if(!ctx) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             if(uploadedImage.src) ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
             
-            // キャンバスサイズに応じたフォントサイズの計算 (Min:14px, Max:32px)
-            const baseFontSize = Math.max(14, Math.min(32, Math.floor(canvas.width / 35)));
+            // キャンバスサイズに応じたフォントサイズの計算 (Min:16px, Max:32px)
+            const baseFontSize = Math.max(16, Math.min(32, Math.floor(canvas.width * 0.025)));
             
             markers.forEach((marker, index) => {
                 let { x, y, name, labelX, labelY } = marker;
@@ -1158,7 +1007,7 @@
                 const textStr = `${index + 1}. ${name}`; 
                 const textWidth = ctx.measureText(textStr).width; 
                 const boxWidth = textWidth + 20; 
-                const boxHeight = baseFontSize + 16; // 文字サイズに合わせて高さも変更
+                const boxHeight = baseFontSize + 16; 
                 
                 // 【安全装置（リミットスイッチ）】ラベルがキャンバスの外に出ないようにクランプ(制限)する
                 if (labelX + boxWidth > canvas.width - 5) labelX = canvas.width - boxWidth - 5;
@@ -1166,10 +1015,9 @@
                 if (labelY + boxHeight > canvas.height - 5) labelY = canvas.height - boxHeight - 5;
                 if (labelY < 5) labelY = 5;
                 
-                // クランプした結果をマーカーオブジェクトに反映（ドラッグ操作の補正）
+                // クランプした結果をマーカーオブジェクトに反映（ドラッグ操作時の線の分離を防ぐ）
                 marker.labelX = labelX;
                 marker.labelY = labelY;
-
                 marker.hitBox = { x: labelX, y: labelY, w: boxWidth, h: boxHeight };
                 
                 // 引出線の描画
@@ -1324,7 +1172,7 @@
             });
 
             filteredInventory.sort((a, b) => a.brand.localeCompare(b.brand));
-            if(filteredInventory.length === 0) { inventoryListUI.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">該当するデータがありません。</div>`; return; }
+            if(filteredInventory.length === 0) { inventoryListUI.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">該当する塗料がありません。</div>`; return; }
 
             filteredInventory.forEach(item => {
                 const li = document.createElement('li'); li.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex flex-col justify-between';
