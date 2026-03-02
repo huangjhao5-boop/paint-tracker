@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Paint Tracker - 塗裝配方視覺化系統</title>
+    <title>Visual Paint Tracker - 塗装レシピ管理システム</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         canvas { user-select: none; -webkit-user-select: none; }
@@ -23,19 +23,19 @@
     <nav class="fixed bottom-0 md:top-0 md:bottom-auto left-0 w-full bg-slate-800 text-slate-300 z-50 shadow-lg flex justify-around md:justify-start">
         <button class="nav-btn active flex-1 md:flex-none py-3 px-4 md:px-6 hover:bg-slate-700 hover:text-white transition flex flex-col md:flex-row items-center font-bold text-blue-400 border-t-2 md:border-t-0 md:border-b-2 border-blue-400" data-target="view-projects">
             <svg class="w-6 h-6 md:mr-2 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-            <span class="text-[10px] md:text-sm mt-1 md:mt-0">專案/配方</span>
+            <span class="text-[10px] md:text-sm mt-1 md:mt-0">プロジェクト</span>
         </button>
         <button class="nav-btn flex-1 md:flex-none py-3 px-4 md:px-6 hover:bg-slate-700 hover:text-white transition flex flex-col md:flex-row items-center font-bold" data-target="view-inventory">
             <svg class="w-6 h-6 md:mr-2 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-            <span class="text-[10px] md:text-sm mt-1 md:mt-0">庫存管理</span>
+            <span class="text-[10px] md:text-sm mt-1 md:mt-0">在庫管理</span>
         </button>
         <button class="nav-btn flex-1 md:flex-none py-3 px-4 md:px-6 hover:bg-slate-700 hover:text-white transition flex flex-col md:flex-row items-center font-bold" data-target="view-dashboard">
             <svg class="w-6 h-6 md:mr-2 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-            <span class="text-[10px] md:text-sm mt-1 md:mt-0">所持狀況</span>
+            <span class="text-[10px] md:text-sm mt-1 md:mt-0">ダッシュボード</span>
         </button>
         <button class="nav-btn flex-1 md:flex-none py-3 px-4 md:px-6 hover:bg-slate-700 hover:text-white transition flex flex-col md:flex-row items-center font-bold" data-target="view-settings">
             <svg class="w-6 h-6 md:mr-2 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            <span class="text-[10px] md:text-sm mt-1 md:mt-0">系統設定</span>
+            <span class="text-[10px] md:text-sm mt-1 md:mt-0">設定</span>
         </button>
     </nav>
 
@@ -48,7 +48,7 @@
         <div id="view-projects" class="view-section active">
             <div class="bg-white md:rounded-xl shadow-sm p-6 mb-4">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-slate-800">塗裝專案一覽</h2>
+                    <h2 class="text-2xl font-bold text-slate-800">塗装プロジェクト一覧</h2>
                     <button id="createNewProjectBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow font-bold flex items-center transition">
                         <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         新規作成
@@ -58,25 +58,25 @@
                 <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1">メーカー (廠商)</label>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">メーカー</label>
                             <select id="filterMaker" class="w-full bg-white border border-slate-300 rounded p-2 text-sm text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
-                                <option value="ALL">すべて (全部)</option>
+                                <option value="ALL">すべて</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1">グレード/スケール (等級/比例)</label>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">グレード/スケール</label>
                             <select id="filterGrade" class="w-full bg-white border border-slate-300 rounded p-2 text-sm text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
-                                <option value="ALL">すべて (全部)</option>
+                                <option value="ALL">すべて</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-slate-500 mb-1">作品名 (關鍵字搜尋)</label>
-                            <input type="text" id="filterName" placeholder="プロジェクト名で検索..." class="w-full bg-white border border-slate-300 rounded p-2 text-sm text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
+                            <label class="block text-xs font-bold text-slate-500 mb-1">作品名検索</label>
+                            <input type="text" id="filterName" placeholder="プロジェクト名..." class="w-full bg-white border border-slate-300 rounded p-2 text-sm text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
                         </div>
                     </div>
                     <div class="border-t border-slate-200 pt-2 flex flex-wrap items-center gap-2 text-xs">
                         <span class="text-slate-500 font-bold flex items-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>常用條件:
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>よく使う条件:
                         </span>
                         <div id="projectQuickFilters" class="flex flex-wrap gap-2"></div>
                     </div>
@@ -96,19 +96,19 @@
                         <button id="backToProjectsBtn" class="mr-3 text-slate-400 hover:text-white transition">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                         </button>
-                        專案編輯 (エディター)
+                        プロジェクト編集
                     </h2>
                     <button id="saveProjectBtn" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-sm font-bold transition shadow">
-                        保存 (EEPROM書き込み)
+                        保存する
                     </button>
                 </div>
                 <div class="p-4 bg-slate-700">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm text-slate-300 mb-1">メーカー (廠商)</label>
+                            <label class="block text-sm text-slate-300 mb-1">メーカー</label>
                             <div class="flex space-x-2">
                                 <select id="maker" class="w-full bg-slate-600 border-slate-500 rounded p-2 text-white outline-none">
-                                    <optgroup label="キャラクター (角色/機甲)">
+                                    <optgroup label="キャラクター">
                                         <option value="BANDAI (バンダイ)">BANDAI (バンダイ)</option>
                                         <option value="KOTOBUKIYA (コトブキヤ)">KOTOBUKIYA (コトブキヤ)</option>
                                         <option value="Good Smile Company">Good Smile Company</option>
@@ -116,24 +116,24 @@
                                         <option value="VOLKS (ボークス)">VOLKS (ボークス)</option>
                                         <option value="PLUM (プラム)">PLUM (プラム)</option>
                                     </optgroup>
-                                    <optgroup label="スケールモデル (軍事/汽車/模型)">
+                                    <optgroup label="スケールモデル">
                                         <option value="TAMIYA (タミヤ)">TAMIYA (タミヤ)</option>
                                         <option value="HASEGAWA (ハセガワ)">HASEGAWA (ハセガワ)</option>
                                         <option value="AOSHIMA (アオシマ)">AOSHIMA (アオシマ)</option>
                                         <option value="FUJIMI (フジミ)">FUJIMI (フジミ)</option>
                                     </optgroup>
                                     <optgroup label="その他">
-                                        <option value="その他">その他 (自訂)</option>
+                                        <option value="その他">その他 (自由入力)</option>
                                     </optgroup>
                                 </select>
-                                <input type="text" id="customMaker" placeholder="自訂廠商" class="hidden w-1/2 bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
+                                <input type="text" id="customMaker" placeholder="メーカー名を入力" class="hidden w-1/2 bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-300 mb-1">グレード/スケール (等級/比例)</label>
+                            <label class="block text-sm text-slate-300 mb-1">グレード/スケール</label>
                             <div class="flex space-x-2">
                                 <select id="grade" class="w-full bg-slate-600 border-slate-500 rounded p-2 text-white outline-none">
-                                    <optgroup label="ガンプラ (Gunpla)">
+                                    <optgroup label="ガンプラ">
                                         <option value="PG (1/60)">PG (1/60)</option>
                                         <option value="MG (1/100)">MG (1/100)</option>
                                         <option value="RG (1/144)">RG (1/144)</option>
@@ -142,45 +142,45 @@
                                         <option value="MGSD">MGSD</option>
                                         <option value="SD">SD</option>
                                     </optgroup>
-                                    <optgroup label="スケールモデル (Car/Military)">
-                                        <option value="1/24">1/24 (車/Car)</option>
-                                        <option value="1/32">1/32 (航空機/Aircraft)</option>
-                                        <option value="1/35">1/35 (戦車/Military)</option>
-                                        <option value="1/48">1/48 (軍事/Military)</option>
-                                        <option value="1/72">1/72 (軍事/Military)</option>
-                                        <option value="1/700">1/700 (艦船/Ship)</option>
+                                    <optgroup label="スケールモデル">
+                                        <option value="1/24">1/24 (車)</option>
+                                        <option value="1/32">1/32 (航空機)</option>
+                                        <option value="1/35">1/35 (戦車)</option>
+                                        <option value="1/48">1/48 (航空機/戦車)</option>
+                                        <option value="1/72">1/72 (航空機)</option>
+                                        <option value="1/700">1/700 (艦船)</option>
                                     </optgroup>
-                                    <optgroup label="フィギュア/美少女プラモ (Figure)">
+                                    <optgroup label="フィギュア/美少女プラモ">
                                         <option value="1/7">1/7</option>
                                         <option value="1/8">1/8</option>
                                         <option value="1/10">1/10</option>
                                         <option value="1/12">1/12</option>
-                                        <option value="Non-scale">Non-scale (ノンスケール)</option>
+                                        <option value="Non-scale">ノンスケール</option>
                                     </optgroup>
                                     <optgroup label="その他">
-                                        <option value="その他">その他 (自訂)</option>
+                                        <option value="その他">その他 (自由入力)</option>
                                     </optgroup>
                                 </select>
-                                <input type="text" id="customGrade" placeholder="自訂比例" class="hidden w-1/2 bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
+                                <input type="text" id="customGrade" placeholder="スケールを入力" class="hidden w-1/2 bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm text-slate-300 mb-1">作品名 (如: デスティニー)</label>
-                            <input type="text" id="projectName" placeholder="例: デスティニー" class="w-full bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
+                            <label class="block text-sm text-slate-300 mb-1">作品名・キット名</label>
+                            <input type="text" id="projectName" placeholder="例: デスティニーガンダム" class="w-full bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
                         </div>
                     </div>
                 </div>
 
                 <div class="p-6">
                     <div class="mb-4">
-                        <label class="block font-semibold mb-2 text-gray-700">1. 写真をアップロード (上傳照片)</label>
+                        <label class="block font-semibold mb-2 text-gray-700">1. 写真をアップロード</label>
                         <input type="file" id="imageLoader" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                     </div>
 
                     <div class="mb-2 flex justify-between items-end">
-                        <label class="block font-semibold text-gray-700">2. 画像をクリックして塗料を指定 <span class="text-sm font-normal text-blue-600">(ラベルドラッグ可能)</span></label>
+                        <label class="block font-semibold text-gray-700">2. 画像をクリックして塗料を指定 <span class="text-sm font-normal text-blue-600">(ラベルはドラッグで移動可能)</span></label>
                         <button id="downloadBtn" class="bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200 px-3 py-1.5 rounded text-sm transition hidden font-bold">
-                            画像DL (下載圖片)
+                            画像をダウンロード
                         </button>
                     </div>
                     
@@ -189,9 +189,9 @@
                         <canvas id="paintCanvas" class="hidden cursor-crosshair max-w-full shadow-sm"></canvas>
                     
                         <div id="paintModal" class="absolute hidden bg-white p-4 rounded shadow-xl border border-gray-200 z-10 w-64 md:w-80">
-                            <h3 class="font-bold text-sm mb-2">使用する塗料を入力 <span class="text-xs font-normal text-gray-500">(所持から)</span></h3>
+                            <h3 class="font-bold text-sm mb-2">塗料を追加 <span class="text-xs font-normal text-gray-500">(所持リストから検索)</span></h3>
                             <div class="relative">
-                                <input type="text" id="paintInput" class="w-full border rounded p-2 text-sm mb-3" placeholder="例: C1, LP1, ホワイト..." autocomplete="off">
+                                <input type="text" id="paintInput" class="w-full border rounded p-2 text-sm mb-3" placeholder="例: C1, AT01, Ex-01..." autocomplete="off">
                                 <ul id="autocompleteList" class="absolute z-20 w-full bg-white border border-gray-200 shadow-lg rounded mt-[-8px] hidden max-h-48 overflow-y-auto left-0"></ul>
                             </div>
                             <div class="flex justify-end space-x-2">
@@ -216,46 +216,42 @@
         <!-- ========================================== -->
         <div id="view-inventory" class="view-section bg-white md:rounded-xl shadow-lg flex-col min-h-[80vh]">
             <div class="bg-slate-800 text-white p-4 flex items-center shadow-md md:rounded-t-xl">
-                <h2 class="text-xl font-bold flex items-center">ペイントマネージャー (庫存管理)</h2>
+                <h2 class="text-xl font-bold flex items-center">ペイントマネージャー (在庫管理)</h2>
             </div>
             
-            <!-- 搜尋與新增 -->
             <div class="bg-white p-4 border-b border-gray-200 z-20 relative">
                 <div class="relative">
                     <div class="flex items-center bg-gray-50 border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
                         <div class="px-3 text-gray-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
-                        <input type="text" id="masterSearchInput" placeholder="型番、名称を入力 (例: TS14, LG1, レッド)..." class="w-full py-2 outline-none bg-transparent text-sm" autocomplete="off">
+                        <input type="text" id="masterSearchInput" placeholder="型番、名称を入力 (例: GM01, PS1, 001)..." class="w-full py-2 outline-none bg-transparent text-sm" autocomplete="off">
                     </div>
                     <ul id="masterAutocompleteList" class="absolute w-full bg-white border border-gray-200 shadow-xl rounded-b-lg mt-1 hidden max-h-64 overflow-y-auto left-0 z-50"></ul>
                 </div>
             </div>
 
-            <!-- Tabs -->
             <div class="flex bg-white shadow-sm z-10 text-sm font-medium text-center text-gray-500 border-b border-gray-200">
-                <button class="tab-btn flex-1 py-3 text-blue-600 border-b-2 border-blue-600 font-bold" data-status="所持">所持 (擁有)</button>
-                <button class="tab-btn flex-1 py-3 hover:text-gray-700 hover:bg-gray-50 transition" data-status="欲しい">欲しい (預購)</button>
-                <button class="tab-btn flex-1 py-3 hover:text-gray-700 hover:bg-gray-50 transition" data-status="お気に入り">お気に入り (喜歡)</button>
+                <button class="tab-btn flex-1 py-3 text-blue-600 border-b-2 border-blue-600 font-bold" data-status="所持">所持</button>
+                <button class="tab-btn flex-1 py-3 hover:text-gray-700 hover:bg-gray-50 transition" data-status="欲しい">欲しい (購入予定)</button>
+                <button class="tab-btn flex-1 py-3 hover:text-gray-700 hover:bg-gray-50 transition" data-status="お気に入り">お気に入り</button>
             </div>
 
-            <!-- 庫存列表過濾區 -->
             <div class="bg-slate-50 p-3 border-b border-gray-200 text-sm">
                 <div class="flex flex-col md:flex-row gap-2 mb-2">
                     <select id="invFilterMaker" class="w-full md:w-1/2 bg-white border border-slate-300 rounded p-2 text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
-                        <option value="ALL">メーカー: すべて (廠商)</option>
+                        <option value="ALL">メーカー: すべて</option>
                     </select>
                     <select id="invFilterType" class="w-full md:w-1/2 bg-white border border-slate-300 rounded p-2 text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
-                        <option value="ALL">種類: すべて (塗料類型)</option>
+                        <option value="ALL">種類: すべて</option>
                     </select>
                 </div>
                 <div class="flex flex-wrap items-center gap-2 text-xs">
                     <span class="text-slate-500 font-bold flex items-center">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>常用條件:
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>よく使う条件:
                     </span>
                     <div id="invQuickFilters" class="flex flex-wrap gap-2"></div>
                 </div>
             </div>
 
-            <!-- List -->
             <div class="flex-grow overflow-y-auto p-4 bg-gray-50 md:rounded-b-xl">
                 <ul id="inventoryListUI" class="space-y-2"></ul>
             </div>
@@ -268,49 +264,49 @@
             <div class="bg-white md:rounded-xl shadow-lg p-6">
                 <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center">
                     <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
-                    所持状況モニター (Dashboard)
+                    在庫統計ダッシュボード
                 </h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                     <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 text-center">
-                        <div class="text-sm text-blue-600 font-bold mb-1">総所持数 (Total)</div>
+                        <div class="text-sm text-blue-600 font-bold mb-1">総所持数</div>
                         <div class="text-3xl font-black text-blue-800" id="statTotalQty">0 <span class="text-base font-normal">本</span></div>
                     </div>
                     <div class="bg-green-50 border border-green-100 rounded-lg p-4 text-center">
-                        <div class="text-sm text-green-600 font-bold mb-1">登録色数 (Colors)</div>
+                        <div class="text-sm text-green-600 font-bold mb-1">登録色数</div>
                         <div class="text-3xl font-black text-green-800" id="statTotalKinds">0 <span class="text-base font-normal">種</span></div>
                     </div>
                     <div class="bg-rose-50 border border-rose-100 rounded-lg p-4 text-center">
-                        <div class="text-sm text-rose-600 font-bold mb-1">欲しいリスト (Wishlist)</div>
+                        <div class="text-sm text-rose-600 font-bold mb-1">購入予定 (欲しい)</div>
                         <div class="text-3xl font-black text-rose-800" id="statWishlist">0 <span class="text-base font-normal">種</span></div>
                     </div>
                 </div>
 
-                <h3 class="font-bold text-lg text-slate-700 mb-4 border-b pb-2">メーカー別 保有割合 (Brand Ratio)</h3>
+                <h3 class="font-bold text-lg text-slate-700 mb-4 border-b pb-2">メーカー別 保有割合</h3>
                 <div id="brandStatsContainer" class="space-y-4"></div>
             </div>
         </div>
 
         <!-- ========================================== -->
-        <!-- VIEW 4: 系統設定 (Settings) -->
+        <!-- VIEW 4: 系統設定 (Settings / 包含免責聲明) -->
         <!-- ========================================== -->
         <div id="view-settings" class="view-section">
             <div class="bg-white md:rounded-xl shadow-lg p-6 max-w-2xl mx-auto">
                 <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center">
                     <svg class="w-6 h-6 mr-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    システム設定 (Config)
+                    システム設定
                 </h2>
                 
                 <div class="space-y-6">
                     <div class="border border-gray-200 rounded-lg p-5">
-                        <h3 class="font-bold text-gray-800 mb-2">データのバックアップ (資料備份)</h3>
-                        <p class="text-sm text-gray-500 mb-4">在庫やプロジェクトのデータをJSON形式でファイルに保存します。機種変更時などに利用してください。</p>
+                        <h3 class="font-bold text-gray-800 mb-2">データのバックアップ (JSON)</h3>
+                        <p class="text-sm text-gray-500 mb-4">在庫やプロジェクトのデータをファイルに保存します。端末変更時などに利用してください。</p>
                         <div class="flex space-x-3">
                             <button id="exportBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
-                                エクスポート (匯出)
+                                エクスポート (書き出し)
                             </button>
                             <label class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm font-bold shadow transition cursor-pointer">
-                                インポート (匯入)
+                                インポート (読み込み)
                                 <input type="file" id="importFile" accept=".json" class="hidden">
                             </label>
                         </div>
@@ -318,10 +314,10 @@
 
                     <div class="border border-red-200 rounded-lg p-5 bg-red-50">
                         <h3 class="font-bold text-red-700 mb-2">初期化 (Danger Zone)</h3>
-                        <p class="text-sm text-red-600 mb-4">保存されているデータ（SRAM）をすべて消去します。この操作は元に戻せません。</p>
+                        <p class="text-sm text-red-600 mb-4">保存されているデータをすべて消去します。この操作は元に戻せません。</p>
                         <div class="flex space-x-3">
                             <button id="resetProjectsBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
-                                專案履歴を消去
+                                プロジェクト履歴を消去
                             </button>
                             <button id="resetInventoryBtn" class="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
                                 在庫データを全消去
@@ -329,15 +325,14 @@
                         </div>
                     </div>
 
-                    <!-- 新增：免責聲明區塊 (Legal Disclaimer) -->
                     <div class="border border-yellow-200 rounded-lg p-5 bg-yellow-50">
                         <h3 class="font-bold text-yellow-800 mb-2 flex items-center">
                             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            免責聲明 (Disclaimer)
+                            免責事項 (Disclaimer)
                         </h3>
                         <p class="text-xs text-yellow-700 leading-relaxed">
                             本アプリケーション内に記載されているすべての塗料名称、ブランド名、および商標（GSIクレオス、タミヤ、ガイアノーツ等）は、それぞれの権利所有者に帰属します。<br>
-                            本ツールは個人が開発した非公式（Unofficial）の管理用アプリケーションであり、各メーカーとは一切の関係がありません。<br>
+                            本ツールは個人が開発した非公式の管理用アプリケーションであり、各メーカーとは一切の関係がありません。<br>
                             データの正確性については保証いたしません。実際の使用にあたってはメーカー公式の情報を確認してください。
                         </p>
                     </div>
@@ -355,96 +350,130 @@
         function generateUid() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
 
         // === 1. State Management (EEPROM & ROM) ===
-        // 為了極致優化效能，我們將所有資料庫都寫入壓縮陣列中。
-        // masterPaintDB 僅作為執行時的動態陣列 (RAM)。
         const masterPaintDB = [];
 
-        // 數據壓縮陣列 (Data Compression Payload) - 涵蓋 GSI全系, TAMIYA, GAIA NOTES
+        // 數據壓縮陣列 (Data Compression Payload) - 涵蓋 GSI, TAMIYA, GAIA NOTES 全系列 (V14 Final)
         const compressedDB = [
-            // ----- GSI CREOS -----
-            { 
-                brand: "GSIクレオス", series: "Mr.カラー", type: "ラッカー", prefix: "C-", 
-                // 完整補齊 C1~175, C181~189, C301~340, C351~395, C511~515
-                data: "1:ホワイト（白）|2:ブラック（黒）|3:レッド（赤）|4:イエロー（黄）|5:ブルー（青）|6:グリーン（緑）|7:ブラウン（茶）|8:シルバー（銀）|9:ゴールド（金）|10:カッパー（銅）|11:ガルグレー|12:オリーブドラブ(1)|13:ニュートラルグレー|14:ネイビーブルー|15:暗緑色(中島系)|16:濃緑色|17:RLM71ダークグリーン|18:RLM70ブラックグリーン|19:サンディブラウン|20:ライトブルー|21:ミドルストーン|22:ダークアース|23:ダークグリーン(2)|25:ダークシーグレー|26:ダックエッググリーン|27:機体内部色|28:黒鉄色|29:艦底色|30:フラットベース|31:軍艦色(1)|32:軍艦色(2)|33:つや消しブラック|34:スカイブルー|35:明灰白色|36:RLM74グレーグリーン|37:RLM75グレーバイオレット|38:オリーブドラブ(2)|39:ダークイエロー|40:ジャーマングレー|41:レッドブラウン|42:マホガニー|43:ウッドブラウン|44:タン|45:セールカラー|46:クリアー|47:クリアーレッド|48:クリアーイエロー|49:クリアーオレンジ|50:クリアーブルー|51:薄茶色|52:フィールドグレー|54:カーキグリーン|55:カーキ|56:明灰緑色|57:青竹色|58:黄橙色|59:オレンジ|60:RLM02グレー|61:焼鉄色|62:つや消しホワイト|63:ピンク|64:ルマングリーン|65:インディブルー|66:デイトナグリーン|67:パープル|68:モンザレッド|69:グランプリホワイト|70:ダークグリーン|71:ミッドナイトブルー|72:ミディアムブルー|73:エアクラフトグレー|74:エアスペリオリティーブルー|75:メタリックレッド|76:メタリックブルー|77:メタリックグリーン|78:メタルブラック|79:シャインレッド|80:コバルトブルー|81:あずき色|90:シャインシルバー|92:セミグロスブラック|97:灰色9号|100:マルーン|101:スモークグレー|104:ガンクローム|107:キャラクターホワイト|108:キャラクターレッド|109:キャラクターイエロー|110:キャラクターブルー|111:キャラクターフレッシュ(1)|112:キャラクターフレッシュ(2)|113:RLM04イエロー|114:RLM23レッド|115:RLM65ライトブルー|116:RLM66ブラックグレー|117:RLM76ライトブルー|118:RLM78ライトブルー|119:RLM79サンドイエロー|120:RLM80オリーブグリーン|121:RLM81ブラウンバイオレット|122:RLM82ライトグリーン|123:RLM83ダークグリーン|124:暗緑色(三菱系)|125:カウリング色|126:コクピット色(三菱系)|127:コクピット色(中島系)|128:灰緑色|129:濃緑色(中島系)|130:濃緑色(川崎系)|131:赤褐色|132:土草色|135:ロシアングリーン(1)|136:ロシアングリーン(2)|137:タイヤブラック|138:クリアーグリーン|151:ホワイトパール|156:スーパーホワイト|158:スーパーイタリアンレッド|159:スーパーシルバー|171:蛍光レッド|172:蛍光イエロー|173:蛍光オレンジ|174:蛍光ピンク|175:蛍光グリーン|181:スーパークリアー半光沢|182:スーパークリアーつや消し|183:スーパークリアーグレートーン|188:フラットベース ラフ|189:フラットベース なめらか|301:グレーFS36081|302:グリーンFS34092|303:グリーンFS34102|304:オリーブドラブFS34087|305:グレーFS36118|306:グレーFS36270|307:グレーFS36320|308:グレーFS36375|309:グリーンFS34079|310:ブラウンFS30219|311:グレーFS36622|312:グリーンFS34227|313:イエローFS33531|314:ブルーFS35622|315:グレーFS16440|316:ホワイトFS17875|317:グレーFS36231|318:レドーム|319:薄松葉色|320:濃松葉色|321:黄土色|322:フタロシアニンブルー|323:ライトブルー|324:ライトグレー|325:グレーFS26440|326:ブルーFS15044|327:レッドFS11136|328:ブルーFS15050|329:イエローFS13538|330:ダークグリーンBS381C|331:ダークシーグレーBS381C|332:ライトエアクラフトグレー|333:エクストラダークシーグレー|334:バーリーグレー|335:ミディアムシーグレー|336:ヘンプ|337:グレイッシュブルー|338:ライトグレーFS36495|339:エンジングレーFS16081|340:フィールドグリーンFS34097|351:ジンククロメイト タイプⅠ|352:ジンククロメイト タイプⅡ|361:ダークグリーンBS381C/641|362:オーシャングレー|363:ミディアムシーグレー|364:エアクラフトグレーグリーン|365:グロスシーブルー|366:インターミディエイトブルー|367:ブルーグレー|368:スカイ|369:ダークアース|370:エイザーブルー|371:FS36440 ライトガルグレー|372:FS34079 ダークグリーン|373:FS36118 ミディアムガンシップグレー|374:シャロウオーシャンブルー|375:ディープオーシャンブルー|376:レドームグレー|381:暗緑色(川崎系)|382:暗緑色(中島系)|383:暗緑色(川西系)|384:コクピット色(川西系)|385:赤褐色(日本海軍)|391:機体内部色(ターコイズグリーン)|392:機体内部色|393:ロシアンエアクラフトブルー|394:エアクラフトグレー|395:ミディアムグリーン|511:ロシアングリーン4BO|512:ロシアングリーン4BO(退色)|513:ジャーマングレー|514:ジャーマングレー(退色)|515:ジャーマングレー(退色2)"
-            },
-            { 
-                brand: "GSIクレオス", series: "Mr.カラー GGX", type: "ラッカー", prefix: "LG", 
-                data: "1:GGXホワイト(光沢)|2:GGXブラック(光沢)|112:GGXクリアー UVカット光沢|113:GGXクリアー UVカットつや消し"
-            },
-            {
-                brand: "GSIクレオス", series: "Mr.カラー GX", type: "ラッカー", prefix: "GX",
-                data: "1:クールホワイト|2:ウイノーブラック|3:ハーマンレッド|4:キアロイエロー|5:スージーブルー|6:モウリーグリーン|100:スーパークリアーⅢ|114:スーパースムースクリアー|201:GXメタルブラック|202:GXメタルレッド|203:GXメタルイエロー|204:GXメタルブルー|205:GXメタルグリーン|206:GXメタルパープル|207:GXメタルバイオレット|208:GXラフシルバー|209:GXレッドゴールド|210:GXブルーゴールド|211:GXメタルピーチ|212:GXメタルブラッディレッド|213:GXホワイトシルバー|214:GXアイスシルバー|215:GXメタルブラス|216:GXメタルダークブルー|217:GXラフゴールド"
-            },
-            { 
-                brand: "GSIクレオス", series: "スーパーメタリック2", type: "ラッカー", prefix: "SM", 
-                data: "201:スーパーファインシルバー2|202:スーパーゴールド2|203:スーパーアイアン2|204:スーパーステンレス2|205:スーパーチタン2|206:スーパークロームシルバー2|207:スーパーリッチゴールド|208:スーパージュラルミン|209:スーパーカッパー|210:スーパーレッドゴールド|211:スーパーイエローゴールド|212:スーパーマットアルミ"
-            },
-            {
-                brand: "GSIクレオス", series: "水性ホビーカラー", type: "水性", prefix: "H", 
-                data: "1:ホワイト|2:ブラック|3:レッド|4:イエロー|5:ブルー|6:グリーン|7:ブラウン|8:シルバー|9:ゴールド|10:カッパー|11:つや消しホワイト|12:つや消しブラック|13:つや消しレッド|14:オレンジ|15:インディブルー|16:イエローグリーン|17:ココアブラウン|18:黒鉄色|19:ピンク|20:つや消しクリアー|21:グランプリホワイト|22:グレー|23:シャインレッド|24:オレンジイエロー|25:スカイブルー|26:デイトナグリーン|27:ライトブラウン|28:メタルブラック|29:サーモンピンク|30:クリアー|31:ホワイトグリーン|32:ダークグレー|33:あずき色|34:クリームイエロー|35:コバルトブルー|36:ダークグリーン|37:ウッドブラウン|38:赤鉄色|39:パープル|40:フラットベース|41:ペールグリーン|42:ブルーグレー|43:ワインレッド|44:薄茶色|45:みず色|46:エメラルドグリーン|47:レッドブラウン|48:オリーブグレー|49:すみれ色|50:よもぎ色|51:ガルグレー|52:オリーブドラブ(1)|53:ニュートラルグレー|54:ネイビーブルー|55:ミッドナイトブルー|56:ミディアムブルー|57:エアクラフトグレー|58:機体内部色|59:濃緑色(1)|60:濃緑色(2)|61:明灰白色(1)|62:明灰白色(2)|63:青竹色|64:RLM71ダークグリーン|65:RLM70ブラックグリーン|66:RLM79サンディブラウン|67:RLM65ライトブルー|68:RLM74グレーグリーン|69:RLM75グレーバイオレット|70:RLM02グレー|71:ミドルストーン|72:ダークアース|73:ダークグリーン(2)|74:スカイ|75:ダークシーグレー|76:焼鉄色|77:タイヤブラック|78:オリーブドラブ(2)|79:サンディイエロー|80:カーキグリーン|81:カーキ|82:軍艦色(1)|83:軍艦色(2)|84:マホガニー|85:セールカラー|86:モンザレッド|87:メタリックレッド|88:メタリックブルー|89:メタリックグリーン|90:クリアーレッド|91:クリアーイエロー|92:クリアーオレンジ|93:クリアーブルー|94:クリアーグリーン|95:スモークグレー|96:スモークブルー|97:蛍光イエロー|98:蛍光オレンジ|99:蛍光ピンク|100:蛍光グリーン|101:蛍光レッド|401:ダークグレー退色|402:グリーン退色|403:イエロー退色|404:レッド退色|405:オリーブドラブ退色|406:チョコレート退色"
-            },
-            {
-                brand: "GSIクレオス", series: "アクリジョン", type: "水性アクリル", prefix: "N",
-                data: "1:ホワイト|2:ブラック|3:レッド|4:イエロー|5:ブルー|6:グリーン|7:ブラウン|8:シルバー|9:ゴールド|10:カッパー|11:つや消しホワイト|12:つや消しブラック|13:つや消しレッド|14:オレンジ|15:インディブルー|16:イエローグリーン|17:ココアブラウン|18:黒鉄色|19:ピンク|20:つや消しクリアー|21:グランプリホワイト|22:ニュートラルグレー|23:シャインレッド|24:オレンジイエロー|25:スカイブルー|26:デイトナグリーン|27:ライトブラウン|28:メタルブラック|29:サーモンピンク|30:クリアー|31:クリアーレッド|32:クリアーオレンジ|33:クリアーイエロー|34:クリアーグリーン|35:クリアーブルー|36:蛍光レッド|37:蛍光オレンジ|38:蛍光イエロー|39:蛍光グリーン|40:蛍光ピンク|46:クリアーブラウン|47:クリアーパープル|48:クリアーブラック"
-            },
-            {
-                brand: "GSIクレオス", series: "Mr.メタルカラー", type: "ラッカー", prefix: "MC",
-                data: "211:クロームシルバー|212:アイアン|213:ステンレス|214:ダークアイアン|215:カッパー|216:ブロンズ|217:ゴールド|218:アルミ|219:ブラス"
-            },
-            {
-                brand: "GSIクレオス", series: "ウェザリングカラー", type: "エナメル系", prefix: "WC",
-                data: "01:マルチブラック|02:グランドブラウン|03:ステインブラウン|04:サンディウォッシュ|05:マルチホワイト|06:マルチグレー|07:グレイッシュブラウン|08:ラストオレンジ|09:シェイドブルー|10:スポットイエロー|11:フィルタリキッド フェイスグリーン|12:フィルタリキッド レイヤーバイオレット|13:フィルタリキッド スポットイエロー|14:フィルタリキッド シェードブルー"
-            },
-            {
-                brand: "GSIクレオス", series: "ガンダムカラー", type: "ラッカー", prefix: "UG",
-                data: "01:MSホワイト|02:MSブルー|03:MSイエロー|04:MSレッド|05:MSグレー連邦系|06:MSグリーン|07:MSディープグリーン|08:MSグレージオン系|09:MSジオン系緑|10:MSシャアレッド|11:MSシャアピンク|12:MSサザビーレッド|13:MSブルーZ系|14:MSライトブルー|15:MSファントムグレー|16:ティターンズブルー1|17:ティターンズブルー2|18:MSパープル|19:MSライトブルー2|20:MSライトグリーン|21:MSダークグリーン|22:MSファントムグレー|23:MSブルー|24:MSレッド|25:MSイエロー"
-            },
-            {
-                brand: "GSIクレオス", series: "LASCIVUS", type: "ラッカー", prefix: "CL",
-                data: "01:ホワイトピーチ|02:白雪色|03:クリアーペールレッド|04:クリアーペールブラウン|05:クリアーペールオレンジ|06:クリアーホワイト|07:ナッツホワイト|08:クリアーペールブラウン|09:ココアミルク"
-            },
-            // ----- TAMIYA -----
-            {
-                brand: "タミヤ", series: "アクリル塗料", type: "水性アクリル", prefix: "X-", 
-                data: "1:ブラック|2:ホワイト|3:ロイヤルブルー|4:ブルー|5:グリーン|6:オレンジ|7:レッド|8:レモンイエロー|9:ブラウン|10:ガンメタル|11:クロームシルバー|12:ゴールドリーフ|13:メタリックブルー|14:スカイブルー|15:ライトグリーン|16:パープル|17:ピンク|18:セミグロスブラック|19:スモーク|20:エナメル溶剤|20A:アクリル溶剤|21:フラットベース|22:クリヤー|23:クリヤーブルー|24:クリヤーイエロー|25:クリヤーグリーン|26:クリヤーオレンジ|27:クリヤーレッド|28:パークグリーン|31:チタンゴールド|32:チタンシルバー|33:ブロンズ|34:メタリックブラウン|35:セミグロスクリヤー"
-            },
-            {
-                brand: "タミヤ", series: "アクリル塗料", type: "水性アクリル", prefix: "XF-", 
-                data: "1:フラットブラック|2:フラットホワイト|3:フラットイエロー|4:イエローグリーン|5:フラットグリーン|6:コッパー|7:フラットレッド|8:フラットブルー|9:ハルレッド|10:フラットブラウン|11:暗緑色|12:明灰白色|13:濃緑色|14:明灰緑色|15:フラットフレッシュ|16:フラットアルミ|17:シーブルー|18:ミディアムブルー|19:スカイグレイ|20:ミディアムグレイ|21:スカイ|22:デッキタン|23:ライトブルー|24:ダークグレイ|25:ライトシーグレイ|26:ディープグリーン|27:ブラックグリーン|28:ダークコッパー|49:カーキ|50:フィールドブルー|51:カーキドラブ|52:フラットアース|53:ニュートラルグレイ|54:ダークシーグレイ|55:デッキタン|56:メタリックグレイ|57:バフ|58:オリーブグリーン|59:デザートイエロー|60:ダークイエロー|61:ダークグリーン|62:オリーブドラブ|63:ジャーマングレイ|64:レッドブラウン|65:フィールドグレイ|66:ライトグレイ|67:NATOグリーン|68:NATOブラウン|69:NATOブラック|70:暗緑色2|71:コックピット色|72:茶色|73:濃緑色|74:OD色|75:呉海軍工廠グレイ|76:灰緑色|77:佐世保海軍工廠グレイ|78:木甲板色|79:リノリウム甲板色|80:ロイヤルライトグレイ|81:オーシャングレイ2|82:オーシャングレイ|83:ミディアムシーグレイ2|84:ダークアイアン|85:ラバーブラック|86:フラットクリヤー|87:舞鶴海軍工廠グレイ|88:ダークイエロー2|89:ダークグリーン2|90:レッドブラウン2|91:横須賀海軍工廠グレイ|92:イエローブラウン|93:ライトブラウン"
-            },
-            {
-                brand: "タミヤ", series: "エナメル塗料", type: "エナメル", prefix: "X-", suffix: " (エナメル)", 
-                data: "1:ブラック|2:ホワイト|3:ロイヤルブルー|4:ブルー|5:グリーン|6:オレンジ|7:レッド|8:レモンイエロー|9:ブラウン|10:ガンメタル|11:クロームシルバー|12:ゴールドリーフ|13:メタリックブルー|14:スカイブルー|15:ライトグリーン|16:パープル|17:ピンク|18:セミグロスブラック|19:スモーク|21:フラットベース|22:クリヤー|23:クリヤーブルー|24:クリヤーイエロー|25:クリヤーグリーン|26:クリヤーオレンジ|27:クリヤーレッド|28:パークグリーン|31:チタンゴールド|32:チタンシルバー|33:ブロンズ|34:メタリックブラウン|35:セミグロスクリヤー"
-            },
-            {
-                brand: "タミヤ", series: "エナメル塗料", type: "エナメル", prefix: "XF-", suffix: " (エナメル)", 
-                data: "1:フラットブラック|2:フラットホワイト|3:フラットイエロー|4:イエローグリーン|5:フラットグリーン|6:コッパー|7:フラットレッド|8:フラットブルー|9:ハルレッド|10:フラットブラウン|11:暗緑色|12:明灰白色|13:濃緑色|14:明灰緑色|15:フラットフレッシュ|16:フラットアルミ|17:シーブルー|18:ミディアムブルー|19:スカイグレイ|20:ミディアムグレイ|21:スカイ|22:デッキタン|23:ライトブルー|24:ダークグレイ|25:ライトシーグレイ|26:ディープグリーン|27:ブラックグリーン|28:ダークコッパー|49:カーキ|50:フィールドブルー|51:カーキドラブ|52:フラットアース|53:ニュートラルグレイ|54:ダークシーグレイ|55:デッキタン|56:メタリックグレイ|57:バフ|58:オリーブグリーン|59:デザートイエロー|60:ダークイエロー|61:ダークグリーン|62:オリーブドラブ|63:ジャーマングレイ|64:レッドブラウン|65:フィールドグレイ|66:ライトグレイ|67:NATOグリーン|68:NATOブラウン|69:NATOブラック|70:暗緑色2|71:コックピット色|72:茶色|73:濃緑色|74:OD色|75:呉海軍工廠グレイ|76:灰緑色|77:佐世保海軍工廠グレイ|78:木甲板色|79:リノリウム甲板色|80:ロイヤルライトグレイ|81:オーシャングレイ2|82:オーシャングレイ|83:ミディアムシーグレイ2|84:ダークアイアン|85:ラバーブラック|86:フラットクリヤー|87:舞鶴海軍工廠グレイ|88:ダークイエロー2|89:ダークグリーン2|90:レッドブラウン2|91:横須賀海軍工廠グレイ|92:イエローブラウン|93:ライトブラウン"
-            },
-            {
-                brand: "タミヤ", series: "ラッカー塗料 (LP)", type: "ラッカー", prefix: "LP-", 
-                data: "1:ブラック|2:ホワイト|3:フラットブラック|4:フラットホワイト|5:セミグロスブラック|6:ピュアーブルー|7:ピュアーレッド|8:ピュアーイエロー|9:クリヤー|11:シルバー|12:呉海軍工廠グレイ|13:佐世保海軍工廠グレイ|14:舞鶴海軍工廠グレイ|15:横須賀海軍工廠グレイ|16:木甲板色|17:リノリウム甲板色|18:ダルレッド|19:ガンメタル|20:ライトガンメタル|21:イタリアンレッド|22:フラットベース|23:フラットクリヤー|24:セミグロスクリヤー|25:茶色|26:濃緑色|27:ジャーマングレイ|28:オリーブドラブ|29:オリーブドラブ2|30:ライトサンド|31:暗緑色2|32:明灰白色|33:灰緑色|34:ライトグレイ|35:インシグニアホワイト|36:ダークゴーストグレイ|37:ライトゴーストグレイ|38:フラットアルミ|39:レーシングホワイト|40:メタリックブラック|41:マイカブルー|42:マイカレッド|43:パールホワイト|44:メタリックオレンジ|45:レーシングブルー|46:ピュアーメタリックレッド|47:パールブルー|48:スパークリングシルバー|49:パールクリヤー|50:ブライトレッド|51:ピュアーオレンジ|52:クリヤーレッド|53:クリヤーオレンジ|54:ダークアイアン|55:ダークイエロー2|56:ダークグリーン2|57:レッドブラウン2|58:NATOグリーン|59:NATOブラウン|60:NATOブラック|61:メタリックグレイ|62:チタンゴールド|63:チタンシルバー|64:OD色|65:ラバーブラック|66:フラットフレッシュ|67:スモーク|68:クリヤーブルー|69:クリヤーイエロー|70:アルミシルバー|71:シャンパンゴールド|72:マイカシルバー|73:カーキ|74:フラットアース|75:バフ|76:イエローブラウン|77:ライトブラウン|78:フラットブルー|79:フラットレッド|80:フラットイエロー|81:調色用ブルー|82:調色用レッド|83:調色用イエロー|84:カモフラージュグレイ|85:ミディアムエアーグレイ"
-            },
-            {
-                brand: "タミヤ", series: "スプレー (TS)", type: "ラッカースプレー", prefix: "TS-", 
-                data: "1:レッドブラウン|2:ダークグリーン|3:ダークイエロー|4:ジャーマングレイ|5:オリーブドラブ|6:マットブラック|7:レーシングホワイト|8:イタリアンレッド|9:ブリティッシュグリーン|10:フレンチブルー|11:マルーン|12:オレンジ|13:クリヤー|14:ブラック|15:ブルー|16:イエロー|17:アルミシルバー|18:メタリックレッド|19:メタリックブルー|20:メタリックグリーン|21:ゴールド|22:ライトグリーン|23:ライトブルー|24:パープル|25:ピンク|26:ピュアーホワイト|27:マットホワイト|28:オリーブドラブ2|29:セミグロスブラック|30:シルバーリーフ|31:ブライトオレンジ|32:ヘイズグレイ|33:ダルレッド|34:キャメルイエロー|35:パークグリーン|36:蛍光レッド|37:ラベンダー|38:ガンメタル|39:マイカレッド|40:メタリックブラック|41:コーラルブルー|42:ライトガンメタル|43:レーシンググリーン|44:ブリリアントブルー|45:パールホワイト|46:ライトサンド|47:クロームイエロー|48:ガンシップグレイ|49:ブライトレッド|50:マイカブルー|51:レーシングブルー|52:キャンディーライムグリーン|53:ディープメタリックブルー|54:ライトメタリックブルー|55:ダークブルー|56:ブリリアントオレンジ|57:ブルーバイオレット|58:パールライトブルー|59:パールライトレッド|60:パールグリーン|61:NATOグリーン|62:NATOブラウン|63:NATOブラック|64:ダークマイカブルー|65:パールクリヤー|66:呉海軍工廠グレイ|67:佐世保海軍工廠グレイ|68:木甲板色|69:リノリウム甲板色|70:OD色|71:スモーク|72:クリヤーブルー|73:クリヤーオレンジ|74:クリヤーレッド|75:シャンパンゴールド|76:マイカシルバー|77:フラットフレッシュ|78:フィールドグレイ|79:セミグロスクリヤー|80:フラットクリヤー|81:ロイヤルライトグレイ|82:ラバーブラック|83:メタルシルバー|84:メタルゴールド|85:ブライトマイカレッド|86:ピュアーレッド|87:チタンゴールド|88:チタンシルバー|89:パールブルー|90:茶色|91:濃緑色|92:メタリックオレンジ|93:ピュアーブルー|94:メタリックグレイ|95:ピュアーメタリックレッド|96:蛍光オレンジ|97:パールイエロー|98:ピュアーオレンジ|99:舞鶴海軍工廠グレイ|100:ブライトガンメタル|101:ベースホワイト|102:コバルトグリーン"
-            },
-            // ----- GAIA NOTES -----
-            {
-                brand: "ガイアノーツ", series: "ガイアカラー", type: "ラッカー", prefix: "",
-                data: "001:ピュアホワイト|002:ピュアブラック|003:ブライトレッド|004:ウルトラブルー|005:サンシャインイエロー|006:フラットベース|007:クリアー|008:フラットクリアー|009:ブライトシルバー|010:ブライトゴールド|011:フラットホワイト|012:フラットブラック|013:ビリジアングリーン|014:ナチュラルブラウン|015:純色マゼンタ|016:純色シアン|017:純色イエロー|018:エメラルドグリーン|019:ラベンダー|020:ガンメタル|021:セミグロスホワイト|022:セミグロスブラック|023:スカーレット|024:コバルトブルー|025:橙黄色|026:ライトグリーン|027:ダークグリーン|028:ストーングリーン|029:ダークパープル|030:セミグロスクリアー|031:アルティメットホワイト|032:アルティメットブラック|033:純色ルビー|034:純色バイオレット|035:純色グリーン|036:純色パープル|037:純色ピンク|038:プライマリーメタリックレッド|039:プライマリーメタリックブルー|040:プライマリーメタリックイエロー|041:クリアーレッド|042:クリアーオレンジ|043:クリアーブラック|044:クリアーブルー|045:クリアーイエロー|046:クリアーブラウン|047:クリアーパープル|048:クリアーグリーン|049:クリアーピンク|050:クリアーホワイト|051:ノーツフレッシュ|052:ノーツフレッシュホワイト|053:ノーツフレッシュピンク|054:ノーツフレッシュオレンジ|059:サフレスピンク|060:サフレスオレンジ|061:ミッドナイトブルー|062:ミディアムブルー|063:ブルーグレー|071:ニュートラルグレーI|072:ニュートラルグレーII|073:ニュートラルグレーIII|074:ニュートラルグレーIV|075:ニュートラルグレーV|101:蛍光ブルー|102:蛍光ピンク|103:蛍光レッド|104:蛍光グリーン|105:蛍光イエロー|106:蛍光オレンジ|107:蛍光イエローグリーン|108:蛍光ブルーグリーン|121:スターブライトシルバー|122:スターブライトゴールド|123:スターブライトジュラルミン|124:スターブライトブラス|125:スターブライトアイアン|131:パールシルバー|132:パールゴールド|133:パールカッパー"
-            },
-            {
-                brand: "ガイアノーツ", series: "Ex-カラー", type: "ラッカー", prefix: "Ex-",
-                data: "01:Ex-ホワイト|02:Ex-ブラック|03:Ex-クリアー|04:Ex-フラットクリアー|05:Ex-フラットホワイト|06:Ex-フラットブラック|07:Ex-シルバー|08:Ex-ゴールド|09:Ex-セミグロスクリアー|10:Ex-フラットクリアープレミアム"
-            },
-            {
-                brand: "ガイアノーツ", series: "バーチャロンカラー", type: "ラッカー", prefix: "VO-",
-                data: "01:ウォームホワイト|02:アイスコバルトブルー|03:ビビッドオレンジ|04:フレームメタリック(1)|05:フレッシュ|06:ローズブライトレッド|07:マイルドウォームホワイト|08:マーズディープブルー|09:マーズダークブルー|10:マーズライトグレー|11:スノーダークブラウン|12:マイザーパープル|13:コーラルピンク|14:コーラルブラッシュ|15:フレームメタリック(2)|16:パールマーズライトグレー|17:パールマーズライトブルー|18:コーラルピンク(パール)|19:パールマーズダークブルー|20:ストロベリーレッド|21:スノーライトブラウン|22:マイザーピンク|23:マイザーパープル|24:マイザーダークブルー|25:マイザーライトブルー|26:朱|27:萌葱|28:風群青|29:ターコイズメタリック|30:ブライトロイヤルブルー|31:コールドホワイト|32:ターర్ణイズライトブルー|33:マイルドオレンジ|34:ブライトロイヤルブルー|39:風群青|41:ヴィクトリーゴールド|42:ヴィクトリーブラウンゴールド|43:レディッシュウォームホワイト"
-            },
-            {
-                brand: "ガイアノーツ", series: "NAZCA (ナスカ)", type: "ラッカー", prefix: "",
-                data: "NC-001:ミリオンブルー|NC-002:フロストマットブラック|NC-003:フレイムレッド|NC-004:ブルーフォグホワイト|NC-005:スチールホワイト|NC-006:コバルトバイオレット|NC-007:ジョイントグレー|NC-008:ニュートラルホワイト|NC-009:ダークネービーブルー|NC-010:マンダリンオレンジ|NC-011:スノーダークブラウン|NP-001:メカサフ ヘヴィ|NP-002:メカサフ ライト|NP-004:メカサフ スーパーヘヴィ|NP-005:メカサフ ピンク"
-            }
+            // ----- GSI CREOS 特殊系列 -----
+            { brand: "GSIクレオス", series: "リトルアーモリーカラー", type: "ラッカー", prefix: "LAC", data: "101:アルマイトブラック|102:パーカーガンメタリック|103:ステンレスシルバー|104:ガンブルーメタリック|105:フラットダークアース1|106:フラットダークアース2" },
+            { brand: "GSIクレオス", series: "銀河英雄伝説カラー", type: "ラッカー", prefix: "XGC", data: "01:ブリュンヒルトホワイト|02:ヒューベリオングリーン|03:自由惑星同盟軍標準型戦艦グリーン" },
+            { brand: "GSIクレオス", series: "Mr.カラースプレー", type: "ラッカースプレー", prefix: "S", data: "1:ホワイト（白）|2:ブラック（黒）|3:レッド（赤）|4:イエロー（黄）|5:ブルー（青）|6:グリーン（緑）|8:シルバー（銀）|9:ゴールド（金）|11:ガルグレー|12:オリーブドラブ(1)|13:ニュートラルグレー|14:ネービーブルー|15:暗緑色（中島系）|16:濃緑色|28:黒鉄色|29:艦底色|30:つや消しクリアー|31:軍艦色(1)|32:軍艦色(2)|33:つや消しブラック|34:スカイブルー|35:明灰白色（三菱系）|38:オリーブドラブ(2)|39:ダークイエロー|40:ジャーマングレー|41:レッドブラウン|42:マホガニー|43:ウッドブラウン|44:タン|46:クリアー（透明）|47:クリアーレッド|48:クリアーイエロー|49:クリアーオレンジ|50:クリアーブルー|58:黄橙色|59:オレンジ（橙）|61:焼鉄色|62:つや消しホワイト|63:ピンク（桃）|64:ルマングリーン|65:インディブルー|66:デイトナグリーン|67:パープル（紫）|68:モンザレッド|69:グランプリホワイト|70:ダークグリーン|72:ミディアムブルー|75:メタリックレッド|76:メタリックブルー|77:メタリックグリーン|78:メタルブラック|79:シャインレッド|80:コバルトブルー|81:赤２号|90:シャインシルバー|92:セミグロスブラック|97:灰色９号|101:スモークグレー|107:キャラクターホワイト|108:キャラクターレッド|109:キャラクターイエロー|110:キャラクターブルー|111:キャラクターフレッシュ(1)|112:キャラクターフレッシュ(2)|115:RLM65ライトブルー|117:RLM76ライトブルー|124:暗緑色（三菱系）|129:濃緑色（中島系）|151:ホワイトパール" },
+            { brand: "GSIクレオス", series: "Mr.カラースプレー", type: "ラッカースプレー", prefix: "SJ", data: "1:呉海軍工廠標準色|2:佐世保海軍工廠標準色" },
+            { brand: "GSIクレオス", series: "LASCIVUS Aura", type: "ラッカー", prefix: "CL", data: "101:ブロンド|102:栗毛色|103:濡烏|104:ピンクパープル|105:ライラック|106:白雪色|107:亜麻色|108:浅葱色|109:ライムグリーン|110:緋色|111:空色" },
+            { brand: "GSIクレオス", series: "LASCIVUS Deco", type: "ウェット塗料", prefix: "CLC", data: "101:マシュマロ type|102:ピーチ type|103:ミルクティ type" },
+            { brand: "GSIクレオス", series: "LASCIVUS Deco", type: "パウダー塗料", prefix: "LDL", data: "01:フレッシュピンク|02:パッションピンク|03:ホワイトパール" },
+            { brand: "GSIクレオス", series: "美少女フィギュアセット", type: "ラッカー", prefix: "CS", data: "551:美少女フィギュア・フレッシュ セット|581:オリーブドラブ VERSION|582:ダークイエロー VERSION|583:ジャーマングレー VERSION|584:ロシアングリーン VERSION" },
+            { brand: "GSIクレオス", series: "水性プレミアムトップコート", type: "水性スプレー", prefix: "GH", data: "101:UVカットスムースクリアー《つや消し》" },
+            { brand: "GSIクレオス", series: "ツール/その他", type: "ツール", prefix: "GT", data: "33:Mr.注ぎ口キャップ" },
+            { brand: "GSIクレオス", series: "うすめ液/溶剤", type: "溶剤/下地", prefix: "T", data: "101:Mr.カラーうすめ液(小)|102:Mr.カラーうすめ液(中)|103:Mr.カラーうすめ液(大)|104:Mr.カラーうすめ液(特大)|106:Mr.レベリングうすめ液(中)|108:Mr.レベリングうすめ液(特大)|110:水性ホビーカラーうすめ液(中)|111:水性ホビーカラーうすめ液(大)|113:Mr.ツールクリーナー改|114:Mr.ラピッドうすめ液|115:Mr.カラー専用真・溶媒液|116:Mr.ツールクリーナー改(特大)|117:Mr.ラピッドうすめ液(特大)|204:Mr.カラーGGXうすめ液|217:Mr.カラーGGXラピッドうすめ液|312:アクリジョン用ツールクリーナー(中)|313:アクリジョン用ツールクリーナー(大)|305:アクリジョンリターダー|315:アクリジョンエアブラシ用うすめ液 改" },
+            { brand: "GSIクレオス", series: "ウェザリング溶剤", type: "溶剤/下地", prefix: "WCT", data: "101:ウェザリングカラー専用うすめ液|102:ウェザリングカラー専用うすめ液(大)" },
+            { brand: "GSIクレオス", series: "ウェザリング溶剤", type: "溶剤/下地", prefix: "WTT", data: "111:水性ウェザリングペイント専用うすめ液" },
+            
+            // ----- GSI CREOS 標準系列 -----
+            { brand: "GSIクレオス", series: "Mr.カラー", type: "ラッカー", prefix: "C-", data: "1:ホワイト（白）|2:ブラック（黒）|3:レッド（赤）|4:イエロー（黄）|5:ブルー（青）|6:グリーン（緑）|7:ブラウン（茶）|8:シルバー（銀）|9:ゴールド（金）|10:カッパー（銅）|11:ガルグレー|12:オリーブドラブ(1)|13:ニュートラルグレー|14:ネイビーブルー|15:暗緑色(中島系)|16:濃緑色|17:RLM71ダークグリーン|18:RLM70ブラックグリーン|19:サンディブラウン|20:ライトブルー|21:ミドルストーン|22:ダークアース|23:ダークグリーン(2)|25:ダークシーグレー|26:ダックエッググリーン|27:機体内部色|28:黒鉄色|29:艦底色|30:フラットベース|31:軍艦色(1)|32:軍艦色(2)|33:つや消しブラック|34:スカイブルー|35:明灰白色|36:RLM74グレーグリーン|37:RLM75グレーバイオレット|38:オリーブドラブ(2)|39:ダークイエロー|40:ジャーマングレー|41:レッドブラウン|42:マホガニー|43:ウッドブラウン|44:タン|45:セールカラー|46:クリアー|47:クリアーレッド|48:クリアーイエロー|49:クリアーオレンジ|50:クリアーブルー|51:薄茶色|52:フィールドグレー|54:カーキグリーン|55:カーキ|56:明灰緑色|57:青竹色|58:黄橙色|59:オレンジ|60:RLM02グレー|61:焼鉄色|62:つや消しホワイト|63:ピンク|64:ルマングリーン|65:インディブルー|66:デイトナグリーン|67:パープル|68:モンザレッド|69:グランプリホワイト|70:ダークグリーン|71:ミッドナイトブルー|72:ミディアムブルー|73:エアクラフトグレー|74:エアスペリオリティーブルー|75:メタリックレッド|76:メタリックブルー|77:メタリックグリーン|78:メタルブラック|79:シャインレッド|80:コバルトブルー|81:あずき色|90:シャインシルバー|92:セミグロスブラック|97:灰色9号|100:マルーン|101:スモークグレー|104:ガンクローム|107:キャラクターホワイト|108:キャラクターレッド|109:キャラクターイエロー|110:キャラクターブルー|111:キャラクターフレッシュ(1)|112:キャラクターフレッシュ(2)|113:RLM04イエロー|114:RLM23レッド|115:RLM65ライトブルー|116:RLM66ブラックグレー|117:RLM76ライトブルー|118:RLM78ライトブルー|119:RLM79サンドイエロー|120:RLM80オリーブグリーン|121:RLM81ブラウンバイオレット|122:RLM82ライトグリーン|123:RLM83ダークグリーン|124:暗緑色(三菱系)|125:カウリング色|126:コクピット色(三菱系)|127:コクピット色(中島系)|128:灰緑色|129:濃緑色(中島系)|130:濃緑色(川崎系)|131:赤褐色|132:土草色|135:ロシアングリーン(1)|136:ロシアングリーン(2)|137:タイヤブラック|138:クリアーグリーン|151:ホワイトパール|156:スーパーホワイト|158:スーパーイタリアンレッド|159:スーパーシルバー|171:蛍光レッド|172:蛍光イエロー|173:蛍光オレンジ|174:蛍光ピンク|175:蛍光グリーン|181:スーパークリアー半光沢|182:スーパークリアーつや消し|183:スーパークリアーグレートーン|188:フラットベースあらめ|189:フラットベースなめらか|301:グレーFS36081|302:グリーンFS34092|303:グリーンFS34102|304:オリーブドラブFS34087|305:グレーFS36118|306:グレーFS36270|307:グレーFS36320|308:グレーFS36375|309:グリーンFS34079|310:ブラウンFS30219|311:グレーFS36622|312:グリーンFS34227|313:イエローFS33531|314:ブルーFS35622|315:グレーFS16440|316:ホワイトFS17875|317:グレーFS36231|318:レドーム|319:薄松葉色|320:濃松葉色|321:黄土色|322:フタロシアニンブルー|323:ライトブルー|324:ライトグレー|325:グレーFS26440|326:ブルーFS15044|327:レッドFS11136|328:ブルーFS15050|329:イエローFS13538|330:ダークグリーンBS381C|331:ダークシーグレーBS381C|332:ライトエアクラフトグレー|333:エクストラダークシーグレー|334:バーリーグレー|335:ミディアムシーグレー|336:ヘンプ|337:グレイッシュブルー|338:ライトグレーFS36495|339:エンジングレーFS16081|340:フィールドグリーンFS34097|351:ジンククロメイト タイプⅠ|352:ジンククロメイト タイプⅡ|361:ダークグリーンBS381C/641|362:オーシャングレー|363:ミディアムシーグレー|364:エアクラフトグレーグリーン|365:グロスシーブルー|366:インターミディエイトブルー|367:ブルーグレー|368:スカイ|369:ダークアース|370:エイザーブルー|371:FS36440 ライトガルグレー|372:FS34079 ダークグリーン|373:FS36118 ミディアムガンシップグレー|374:シャロウオーシャンブルー|375:ディープオーシャンブルー|376:レドームグレー|381:暗緑色(川崎系)|382:暗緑色(中島系)|383:暗緑色(川西系)|384:コクピット色(川西系)|385:赤褐色(日本海軍)|391:機体内部色(ターコイズグリーン)|392:機体内部色|393:ロシアンエアクラフトブルー|394:エアクラフトグレー|395:ミディアムグリーン|511:ロシアングリーン4BO|512:ロシアングリーン4BO(退色)|513:ジャーマングレー|514:ジャーマングレー(退色)|515:ジャーマングレー(退色2)|516:濃緑色3414|517:茶色3606|518:OD色2314|519:ブロンセグリュン|520:レーダァブラオン|521:テーアシュバルツ|522:土地色|523:草色|524:枯草色|525:緑色|526:茶色|527:陸軍カーキ|528:IDFグレー1|529:IDFグレー2|530:IDFグレー3|601:呉海軍工廠標準色|602:佐世保海軍工廠標準色|603:舞鶴海軍工廠標準色|604:外舷21号色|605:外舷22号色|606:リノリウム色|607:灰色2704(N5)|608:暗灰色2705(N4)|609:滑り止め塗装部色" },
+            { brand: "GSIクレオス", series: "Mr.カラー GGX", type: "ラッカー", prefix: "LG", data: "1:GGXホワイト(光沢)|2:GGXブラック(光沢)|112:GGXクリアー UVカット光沢|113:GGXクリアー UVカットつや消し" },
+            { brand: "GSIクレオス", series: "Mr.カラー GX", type: "ラッカー", prefix: "GX", data: "1:クールホワイト|2:ウイノーブラック|3:ハーマンレッド|4:キアロイエロー|5:スージーブルー|6:モウリーグリーン|100:スーパークリアーⅢ|112:スーパークリアーⅢ UVカット光沢|113:スーパークリアーⅢ UVカットつや消し|114:スーパースムースクリアー|101:GXクリアブラック|102:GXディープクリアレッド|103:GXディープクリアブルー|104:GXクリアグリーン|105:GXクリアピンク|106:GXクリアオレンジ|107:GXクリアパープル|108:GXクリアバイオレット|109:GXクリアブラウン|110:GXクリアシルバー|111:GXクリアゴールド|121:GXクリアルージュ|122:GXクリアピーコックグリーン|201:GXメタルブラック|202:GXメタルレッド|203:GXメタルイエロー|204:GXメタルブルー|205:GXメタルグリーン|206:GXメタルパープル|207:GXメタルバイオレット|208:GXラフシルバー|209:GXレッドゴールド|210:GXブルーゴールド|211:GXメタルイエローグリーン|212:GXメタルピーチ|213:GXホワイトシルバー|214:GXアイスシルバー|215:GXメタルブラッディレッド|216:GXメタルダークブルー|217:GXラフゴールド|218:GXグラファイトブラック" },
+            { brand: "GSIクレオス", series: "スーパーメタリック2", type: "ラッカー", prefix: "SM", data: "201:スーパーファインシルバー2|202:スーパーゴールド2|203:スーパーアイアン2|204:スーパーステンレス2|205:スーパーチタン2|206:スーパークロームシルバー2|207:スーパーリッチゴールド|208:スーパージュラルミン|209:スーパーカッパー|210:スーパーピンクゴールド|211:スーパーレッドゴールド|212:スーパーマットアルミ" },
+            { brand: "GSIクレオス", series: "Mr.クリスタルカラー", type: "ラッカー", prefix: "XC", data: "01:ダイヤモンドシルバー|02:トパーズゴールド|03:ルビーレッド|04:アメジストパープル|05:サファイアブルー|06:トルマリングリーン|07:ターコイズグリーン|08:ムーンストーンパール" },
+            { brand: "GSIクレオス", series: "水性ホビーカラー", type: "水性", prefix: "H", data: "1:ホワイト|2:ブラック|3:レッド|4:イエロー|5:ブルー|6:グリーン|7:ブラウン|8:シルバー|9:ゴールド|10:カッパー|11:つや消しホワイト|12:つや消しブラック|13:つや消しレッド|14:オレンジ|15:インディブルー|16:イエローグリーン|17:ココアブラウン|18:黒鉄色|19:ピンク|20:つや消しクリアー|21:グランプリホワイト|22:グレー|23:シャインレッド|24:オレンジイエロー|25:スカイブルー|26:デイトナグリーン|27:ライトブラウン|28:メタルブラック|29:サーモンピンク|30:クリアー|31:ホワイトグリーン|32:ダークグレー|33:あずき色|34:クリームイエロー|35:コバルトブルー|36:ダークグリーン|37:ウッドブラウン|38:赤鉄色|39:パープル|40:フラットベース|41:ペールグリーン|42:ブルーグレー|43:ワインレッド|44:薄茶色|45:みず色|46:エメラルドグリーン|47:レッドブラウン|48:オリーブグレー|49:すみれ色|50:よもぎ色|51:ガルグレー|52:オリーブドラブ(1)|53:ニュートラルグレー|54:ネイビーブルー|55:ミッドナイトブルー|56:ミディアムブルー|57:エアクラフトグレー|58:機体内部色|59:濃緑色(1)|60:濃緑色(2)|61:明灰白色(1)|62:明灰白色(2)|63:青竹色|64:RLM71ダークグリーン|65:RLM70ブラックグリーン|66:RLM79サンディブラウン|67:RLM65ライトブルー|68:RLM74グレーグリーン|69:RLM75グレーバイオレット|70:RLM02グレー|71:ミドルストーン|72:ダークアース|73:ダークグリーン(2)|74:スカイ|75:ダークシーグレー|76:焼鉄色|77:タイヤブラック|78:オリーブドラブ(2)|79:サンディイエロー|80:カーキグリーン|81:カーキ|82:軍艦色(1)|83:軍艦色(2)|84:マホガニー|85:セールカラー|86:モンザレッド|87:メタリックレッド|88:メタリックブルー|89:メタリックグリーン|90:クリアーレッド|91:クリアーイエロー|92:クリアーオレンジ|93:クリアーブルー|94:クリアーグリーン|95:スモークグレー|96:スモークブルー|97:蛍光イエロー|98:蛍光オレンジ|99:蛍光ピンク|100:蛍光グリーン|101:蛍光レッド|110:半光沢クリアー|151:ホワイトパール|301:グレーFS36081|302:グリーンFS34092|303:グリーンFS34102|304:オリーブドラブFS34087|305:グレーFS36118|306:グレーFS36270|307:グレーFS36320|308:グレーFS36375|309:グリーンFS34079|310:ブラウンFS30219|311:グレーFS36622|312:グリーンFS34227|313:イエローFS33531|314:ブルーFS35622|315:グレーFS16440|316:ホワイトFS17875|317:グレーFS36231|318:レドーム|319:薄松葉色|320:濃松葉色|321:黄土色|322:フタロシアニンブルー|323:ライトブルー|324:ライトグレー|325:グレーFS26440|326:ブルーFS15044|327:レッドFS11136|328:ブルーFS15050|329:イエローFS13538|330:ダークグリーンBS381C|331:ダークシーグレーBS381C|332:ライトエアクラフトグレー|333:エクストラダークシーグレー|334:バーリーグレー|335:ミディアムシーグレー|336:ヘンプ|337:グレイッシュブルー|338:ライトグレーFS36495|339:エンジングレーFS16081|340:フィールドグリーンFS34097|401:ダークグレー退色|402:グリーン退色|403:イエロー退色|404:レッド退色|405:オリーブドラブ退色|406:チョコレート退色" },
+            { brand: "GSIクレオス", series: "水性 Classy 'n Dressy", type: "水性", prefix: "HCD", data: "01:ラベンダー|02:チューリップ|03:サクラ|04:ギンセンカ|05:ミモザ|06:クローバー|07:ブルースター" },
+            { brand: "GSIクレオス", series: "水性 HJコラボ", type: "水性", prefix: "HJ", data: "01:HJグローホワイト|02:HJピンクレッド|03:HJマスタードイエロー|04:HJアースブルー|05:HJモスグリーン|06:HJアッシュパープル|07:HJプロトタイプオレンジ|08:HJウォームグレー" },
+            { brand: "GSIクレオス", series: "水性 スーパーメタリック", type: "水性", prefix: "HSM", data: "01:スーパーファインシルバー|02:スーパーファインゴールド" },
+            { brand: "GSIクレオス", series: "水性 スターターセット", type: "水性", prefix: "HS", data: "30:水性ホビーカラースターターセット" },
+            { brand: "GSIクレオス", series: "水性 色ノ源", type: "水性", prefix: "HCR", data: "1:シアン|2:マゼンタ|3:イエロー" },
+            { brand: "GSIクレオス", series: "アクリジョン", type: "水性アクリル", prefix: "N", data: "1:ホワイト|2:ブラック|3:レッド|4:イエロー|5:ブルー|6:グリーン|7:ブラウン|8:シルバー|9:ゴールド|10:カッパー|11:つや消しホワイト|12:つや消しブラック|13:つや消しレッド|14:オレンジ|15:インディブルー|16:イエローグリーン|17:ココアブラウン|18:黒鉄色|19:ピンク|20:つや消しクリアー|21:グランプリホワイト|22:ニュートラルグレー|23:シャインレッド|24:オレンジイエロー|25:スカイブルー|26:デイトナグリーン|27:ライトブラウン|28:メタルブラック|29:サーモンピンク|30:クリアー|31:クリアーレッド|32:クリアーオレンジ|33:クリアーイエロー|34:クリアーグリーン|35:クリアーブルー|36:蛍光レッド|37:蛍光オレンジ|38:蛍光イエロー|39:蛍光グリーン|40:蛍光ピンク|43:マルーン|44:薄茶色|45:みず色|46:エメラルドグリーン|47:レッドブラウン|49:すみれ色|50:よもぎ色|51:ガルグレー|52:オリーブドラブ(1)|54:ネイビーブルー|55:ミッドナイトブルー|56:ミディアムブルー|57:エアクラフトグレー|58:機体内部色|60:濃緑色|61:明灰白色|62:明灰緑色|63:青竹色|66:RLM79サンドイエロー|67:RLM65ライトブルー|68:RLM74グレーグリーン|69:RLM75グレーバイオレット|70:RLM02グレー|71:ミドルストーン|72:ダークアース|73:ダークグリーン(2)|76:焼鉄色|77:タイヤブラック|78:オリーブドラブ(2)|79:ダークイエロー|80:カーキグリーン|81:カーキ|82:軍艦色(1)|83:軍艦色(2)|84:マホガニー|85:セールカラー|86:モンザレッド|87:メタリックレッド|88:メタリックブルー|89:メタリックグリーン|90:クリアーレッド|91:クリアーイエロー|92:クリアーオレンジ|93:クリアーブルー|94:クリアーグリーン|95:スモークグレー|97:蛍光イエロー|98:蛍光オレンジ|99:蛍光ピンク|100:蛍光グリーン|101:蛍光レッド|127:コクピット色(中島系)" },
+            { brand: "GSIクレオス", series: "アクリジョン ベース", type: "水性アクリル", prefix: "BN", data: "01:ベースホワイト|02:ベースグレー|03:ベースレッド|04:ベースイエロー|05:ベースブルー|06:ベースグリーン" },
+            { brand: "GSIクレオス", series: "アクリジョン 筆塗り専用", type: "水性アクリル", prefix: "NF", data: "01:ストロベリーピンク|02:ミルキーコーラル|03:クリーミーベージュ|04:グラスグリーン|05:ミントブルー|06:カシスピンク|07:ワインレッド|08:グレイッシュパープル|09:アンティークゴールド" },
+            { brand: "GSIクレオス", series: "アクリジョン スターター", type: "水性アクリル", prefix: "NS", data: "30:アクリジョンスターターセット" },
+            { brand: "GSIクレオス", series: "Mr.メタルカラー", type: "ラッカー", prefix: "MC", data: "211:クロームシルバー|212:アイアン|213:ステンレス|214:ダークアイアン|215:カッパー|216:ブロンズ|217:ゴールド|218:アルミ|219:ブラス" },
+            { brand: "GSIクレオス", series: "ウェザリングカラー", type: "エナメル系", prefix: "WC", data: "01:マルチブラック|02:グランドブラウン|03:ステインブラウン|04:サンディウォッシュ|05:マルチホワイト|06:マルチグレー|07:グレイッシュブラウン|08:ラストオレンジ|09:シェイドブルー|10:スポットイエロー|11:フィルタリキッド フェイスグリーン|12:フィルタリキッド レイヤーバイオレット|13:フィルタリキッド スポットイエロー|14:フィルタリキッド ホワイトダスト|15:ライトグレイッシュ|16:オーカーソイル|17:マットアンバー|18:シェイドブラウン" },
+            { brand: "GSIクレオス", series: "ウェザリングペースト", type: "ペースト", prefix: "WP", data: "01:マッドブラウン|02:マッドホワイト|03:ウェットクリアー|04:マッドイエロー|05:マッドレッド" },
+            { brand: "GSIクレオス", series: "水性ウェザリングペイント", type: "水性", prefix: "WT", data: "01:ベーシックホワイト|02:ベーシックブラック|03:ミディアムマッド|04:ナチュラルラスト|05:ファインダスト|06:ウォッシュアンバー" },
+            { brand: "GSIクレオス", series: "水性ウェザリングセット", type: "水性", prefix: "WTS", data: "01:水性ウェザリングペイント 6色セット" },
+            { brand: "GSIクレオス", series: "ウェザリングライナー", type: "鉛筆型", prefix: "PP", data: "201:錆色セット|202:泥色セット|203:雪色セット" },
+            { brand: "GSIクレオス", series: "八雲〈YAKUMO〉", type: "エナメル系", prefix: "WY", data: "01:セットA|02:セットB|03:セットC|04:セットD" },
+            { brand: "GSIクレオス", series: "ウルトラメタリック", type: "ラッカー", prefix: "UM", data: "01:ウルトラシルバー" },
+            { brand: "GSIクレオス", series: "色ノ源", type: "ラッカー", prefix: "CR", data: "1:シアン|2:マゼンタ|3:イエロー" },
+            { brand: "GSIクレオス", series: "リバイバル", type: "ラッカー", prefix: "CRE", data: "01:クランベリーレッドパール|02:セルリアンブルー|03:ブリティッシュグリーン" },
+            { brand: "GSIクレオス", series: "ベルベットカラー", type: "ラッカー", prefix: "CV", data: "01:ベルベット レッド|02:ベルベット ブルー|03:ベルベット グリーン" },
+            { brand: "GSIクレオス", series: "ASH&MACHINE", type: "ラッカー", prefix: "CA", data: "01:グレートーン1|02:グレートーン2|03:グレートーン3|04:グレートーン4|05:カーボングレー" },
+            { brand: "GSIクレオス", series: "LASCIVUS", type: "ラッカー", prefix: "CL", data: "01:ホワイトピーチ|02:白雪色|03:クリアーペールレッド|04:クリアーペールブラウン|05:クリアーペールオレンジ|06:クリアーホワイト|07:ナッツホワイト|08:クリアーペールブラウン|09:ココアミルク" },
+            { brand: "GSIクレオス", series: "ガンダムカラー", type: "ラッカー", prefix: "UG", data: "01:MSホワイト|02:MSブルー|03:MSイエロー|04:MSレッド|05:MSグレー連邦系|06:MSグリーン|07:MSディープグリーン|08:MSグレージオン系|09:MSジオン系緑|10:MSシャアレッド|11:MSシャアピンク|12:MSサザビーレッド|13:MSブルーZ系|14:MSライトブルー|15:MSファントムグレー|16:ティターンズブルー1|17:ティターンズブルー2|18:RX-78ホワイト Ver.アニメ|19:RX-78ブルー Ver.アニメ|20:RX-78レッド Ver.アニメ|21:RX-78イエロー Ver.アニメ|22:MS-06Sレッド Ver.アニメ|23:MS-06Sピンク Ver.アニメ|24:トランザムレッドパール|25:トランザムハイライトレッド" },
+            { brand: "GSIクレオス", series: "ガンダムカラースプレー", type: "ラッカースプレー", prefix: "SG", data: "01:MSホワイト|02:MSブルー|03:MSイエロー|04:MSレッド|05:MSグレー連邦系|06:MSグリーン|07:MSディープグリーン|08:MSパープル|09:MSグレージオン系|10:MSシャアピンク|11:MSシャアレッド|12:MSサザビーレッド|13:MSブルーZ系|14:MSライトブルー|15:MSファントムグレー|16:ティターンズブルー1|17:ティターンズブルー2" },
+            { brand: "GSIクレオス", series: "水性ガンダムカラー", type: "水性", prefix: "HUG", data: "01:RX-78-2ホワイト|02:RX-78-2ブルー|03:RX-78-2イエロー|04:RX-78-2レッド|05:シャア専用ピンク|06:シャア専用レッド|07:ファントムグレー|08:ティターンズブルー1|09:ティターンズブルー2|101:SEEDソードストライクブルー|102:SEEDランチャーストライクグリーン|103:SEEDストライクルージュピンク|104:SEEDディアクティブホワイト|105:SEEDディアクティブグレー|106:SEEDディアクティブブラック|107:SEEDフリーダムブルー|108:SEEDジャスティスピンク|201:SEED DESTINYソードインパルスレッド|202:SEED DESTINYブラストインパルスグリーン|203:SEED DESTINYイザーク専用機スカイブルー|204:SEED DESTINYルナマリア専用機ピンク|205:SEED DESTINYレイ専用機パープル|206:SEED DESTINYデスティニーレッド|207:SEED DESTINYライブコンサートピンク|208:SEED DESTINYハイネ専用機オレンジ|301:ライジングフリーダムブルー|302:イモータルジャスティスレッド|303:ブラックナイトスコードブラック|304:ギャンシュトロームブルー|305:マイティーストライクフリーダムダークブルー|306:インフィニットジャスティス弐式ピンク|307:デュエルブリッツブルーグレー|308:ライトニングバスターホワイト|309:ディスティニーSpecIIライトグレー|310:ブラックナイトスコードカルラライトブルー|311:ゼウスシルエットゴールド" },
+            { brand: "GSIクレオス", series: "水性 水星の魔女", type: "水性", prefix: "XHUG", data: "01:エアリアルブルー|02:エアリアルホワイト|03:エアリアルグレー|04:ルブリスピンク|05:ルブリスグレー|06:チュチュ専用機イエロー|07:ダリルバルデレッド|08:ファラクトグレー|09:ミカエリスパープル|10:ペギルペンデバイオレット|11:ルブリスウルグリーン|12:ルブリスソーンブラウン|13:エアリアル改修型ブルー" },
+            { brand: "GSIクレオス", series: "水性 30MSカラー", type: "水性", prefix: "HMS", data: "01:ボディーカラーA|02:ボディーカラーB|03:ボディーカラーC|04:ペールクリアーレッド|05:ペールクリアーオレンジ|06:ペールクリアーブラウン|07:クリアーホワイト|08:スムースパールコート" },
+            { brand: "GSIクレオス", series: "水性 ボトムズカラー", type: "水性", prefix: "HV", data: "01:ATグリーン|02:ATライトグリーン|03:ATブルーグレー|04:ATライトグレー|05:ATダークブルー" },
+            { brand: "GSIクレオス", series: "水性 ソフビカラー", type: "水性", prefix: "SVC", data: "01:ホワイト|02:ブラック|03:レッド|04:イエロー|05:ブルー|06:シルバー|07:ゴールド|08:メタリックブラック" },
+            { brand: "GSIクレオス", series: "Mr.ホビーマーカー", type: "水性マーカー", prefix: "CM", data: "01:ゴールド|02:シルバー|03:カッパー|04:ガンメタリック|05:焼鉄色|100:ぼかしペン|101:極細墨入れ(ブラック)|102:極細墨入れ(グレー)|103:極細墨入れ(ブラウン)" },
+            { brand: "GSIクレオス", series: "Mr.ホビーマーカーセット", type: "水性マーカー", prefix: "CMS", data: "01:メタリックセット" },
+            { brand: "GSIクレオス", series: "ガンダムマーカー", type: "アルコール系", prefix: "GM", data: "01:スミいれ用(ブラック)|02:スミいれ用(グレー)|03:スミいれ用(ブラウン)|04:ガンダムゴールド|05:ガンダムシルバー|06:ガンダムブルー|07:ガンダムレッド|08:ガンダムイエロー|09:ガンダムアイグリーン|10:ガンダムブラック|11:ガンダムホワイト|12:ガンダムグレー|13:ガンダムメカグレー|14:ガンダム蛍光ピンク|15:ガンダム蛍光グリーン|16:ガンダムメタレッド|17:ガンダムメタブルー|18:ガンダムメタグリーン|19:ガンダムメタバイオレット|20:ふでペン(ブラック)|21:ふでペン(グレー)|300:消しペン|310:消しペン ツインタイプ|301:流し込み(ブラック)|302:流し込み(グレー)|303:流し込み(ブラウン)|311:流し込み(ブルー1)|312:流し込み(オレンジ1)|313:流し込み(オリーブ)|400:ぼかしペン|401:リアルタッチグレー1|402:リアルタッチグレー2|403:リアルタッチブルー1|404:リアルタッチレッド1|405:リアルタッチオレンジ1|406:リアルタッチグレー3|407:リアルタッチブラウン1|408:リアルタッチグリーン1|409:リアルタッチイエロー1|410:リアルタッチピンク1|501:クリアー(光沢)|502:クリアー(つや消し)" },
+            { brand: "GSIクレオス", series: "ガンダムマーカーEX", type: "アルコール系", prefix: "XGM", data: "01:ニューホワイト|02:シャインシルバー|03:ロイヤルメタレッド|04:コスモメタブルー|05:ヘビーガンメタリック|06:ルミナスメタグリーン|07:ホワイトゴールド|08:イエローゴールド|100:ガンダムメッキシルバー|201:月光蝶ホロシルバー|202:トランザムホロレッド|203:MEPEホロイエロー|204:光の翼ホロブルー|205:サイコフレームホログリーン" },
+            { brand: "GSIクレオス", series: "ガンダムマーカーセット", type: "アルコール系", prefix: "GMS", data: "105:ベーシック6色セット|108:ジオン軍6色セット|109:ガンダムSEED ベーシック|110:細先タイプセット|112:リアルタッチマーカーセット1|113:リアルタッチマーカーセット2|121:メタリック マーカーセット|122:流し込みスミ入れペンセット|124:アドバンスセット|125:メタリックマーカーセット2|126:細先タイプセット2|127:MSVセット" },
+            { brand: "GSIクレオス", series: "ガンダムマーカーEXセット", type: "アルコール系", prefix: "XGMS", data: "100:メッキシルバー＆EXゴールド" },
+            { brand: "GSIクレオス", series: "ガンダムマーカーシステム", type: "ツール", prefix: "GMA", data: "01:エアブラシシステム|02:ハンドピース|01K:専用替え芯" },
+            { brand: "GSIクレオス", series: "ガンダムマーカースミ入れ", type: "シャープペン", prefix: "GP", data: "01:スミ入れペン シャープ|02:専用替芯" },
+            { brand: "GSIクレオス", series: "30MMマーカー", type: "アルコール系", prefix: "TMS", data: "01:ウェポン＆フレームセット|02:ベーシックセット" },
+            { brand: "GSIクレオス", series: "プラノサウルスマーカー", type: "アルコール系", prefix: "PSMS", data: "01:ティラノサウルスセット|02:トリケラ/ステゴサウルスセット" },
+            
+            // ----- TAMIYA 標準系列 -----
+            { brand: "タミヤ", series: "アクリル塗料", type: "水性アクリル", prefix: "X-", data: "1:ブラック|2:ホワイト|3:ロイヤルブルー|4:ブルー|5:グリーン|6:オレンジ|7:レッド|8:レモンイエロー|9:ブラウン|10:ガンメタル|11:クロームシルバー|12:ゴールドリーフ|13:メタリックブルー|14:スカイブルー|15:ライトグリーン|16:パープル|17:ピンク|18:セミグロスブラック|19:スモーク|20:エナメル溶剤|20A:アクリル溶剤|21:フラットベース|22:クリヤー|23:クリヤーブルー|24:クリヤーイエロー|25:クリヤーグリーン|26:クリヤーオレンジ|27:クリヤーレッド|28:パークグリーン|31:チタンゴールド|32:チタンシルバー|33:ブロンズ|34:メタリックブラウン|35:セミグロスクリヤー" },
+            { brand: "タミヤ", series: "アクリル塗料", type: "水性アクリル", prefix: "XF-", data: "1:フラットブラック|2:フラットホワイト|3:フラットイエロー|4:イエローグリーン|5:フラットグリーン|6:コッパー|7:フラットレッド|8:フラットブルー|9:ハルレッド|10:フラットブラウン|11:暗緑色|12:明灰白色|13:濃緑色|14:明灰緑色|15:フラットフレッシュ|16:フラットアルミ|17:シーブルー|18:ミディアムブルー|19:スカイグレイ|20:ミディアムグレイ|21:スカイ|22:デッキタン|23:ライトブルー|24:ダークグレイ|25:ライトシーグレイ|26:ディープグリーン|27:ブラックグリーン|28:ダークコッパー|49:カーキ|50:フィールドブルー|51:カーキドラブ|52:フラットアース|53:ニュートラルグレイ|54:ダークシーグレイ|55:デッキタン|56:メタリックグレイ|57:バフ|58:オリーブグリーン|59:デザートイエロー|60:ダークイエロー|61:ダークグリーン|62:オリーブドラブ|63:ジャーマングレイ|64:レッドブラウン|65:フィールドグレイ|66:ライトグレイ|67:NATOグリーン|68:NATOブラウン|69:NATOブラック|70:暗緑色2|71:コックピット色|72:茶色|73:濃緑色|74:OD色|75:呉海軍工廠グレイ|76:灰緑色|77:佐世保海軍工廠グレイ|78:木甲板色|79:リノリウム甲板色|80:ロイヤルライトグレイ|81:オーシャングレイ2|82:オーシャングレイ|83:ミディアムシーグレイ2|84:ダークアイアン|85:ラバーブラック|86:フラットクリヤー|87:舞鶴海軍工廠グレイ|88:ダークイエロー2|89:ダークグリーン2|90:レッドブラウン2|91:横須賀海軍工廠グレイ|92:イエローブラウン|93:ライトブラウン" },
+            { brand: "タミヤ", series: "エナメル塗料", type: "エナメル", prefix: "X-", suffix: " (エナメル)", data: "1:ブラック|2:ホワイト|3:ロイヤルブルー|4:ブルー|5:グリーン|6:オレンジ|7:レッド|8:レモンイエロー|9:ブラウン|10:ガンメタル|11:クロームシルバー|12:ゴールドリーフ|13:メタリックブルー|14:スカイブルー|15:ライトグリーン|16:パープル|17:ピンク|18:セミグロスブラック|19:スモーク|21:フラットベース|22:クリヤー|23:クリヤーブルー|24:クリヤーイエロー|25:クリヤーグリーン|26:クリヤーオレンジ|27:クリヤーレッド|28:パークグリーン|31:チタンゴールド|32:チタンシルバー|33:ブロンズ|34:メタリックブラウン|35:セミグロスクリヤー" },
+            { brand: "タミヤ", series: "エナメル塗料", type: "エナメル", prefix: "XF-", suffix: " (エナメル)", data: "1:フラットブラック|2:フラットホワイト|3:フラットイエロー|4:イエローグリーン|5:フラットグリーン|6:コッパー|7:フラットレッド|8:フラットブルー|9:ハルレッド|10:フラットブラウン|11:暗緑色|12:明灰白色|13:濃緑色|14:明灰緑色|15:フラットフレッシュ|16:フラットアルミ|17:シーブルー|18:ミディアムブルー|19:スカイグレイ|20:ミディアムグレイ|21:スカイ|22:デッキタン|23:ライトブルー|24:ダークグレイ|25:ライトシーグレイ|26:ディープグリーン|27:ブラックグリーン|28:ダークコッパー|49:カーキ|50:フィールドブルー|51:カーキドラブ|52:フラットアース|53:ニュートラルグレイ|54:ダークシーグレイ|55:デッキタン|56:メタリックグレイ|57:バフ|58:オリーブグリーン|59:デザートイエロー|60:ダークイエロー|61:ダークグリーン|62:オリーブドラブ|63:ジャーマングレイ|64:レッドブラウン|65:フィールドグレイ|66:ライトグレイ|67:NATOグリーン|68:NATOブラウン|69:NATOブラック|70:暗緑色2|71:コックピット色|72:茶色|73:濃緑色|74:OD色|75:呉海軍工廠グレイ|76:灰緑色|77:佐世保海軍工廠グレイ|78:木甲板色|79:リノリウム甲板色|80:ロイヤルライトグレイ|81:オーシャングレイ2|82:オーシャングレイ|83:ミディアムシーグレイ2|84:ダークアイアン|85:ラバーブラック|86:フラットクリヤー|87:舞鶴海軍工廠グレイ|88:ダークイエロー2|89:ダークグリーン2|90:レッドブラウン2|91:横須賀海軍工廠グレイ|92:イエローブラウン|93:ライトブラウン" },
+            { brand: "タミヤ", series: "ラッカー塗料 (LP)", type: "ラッカー", prefix: "LP-", data: "1:ブラック|2:ホワイト|3:フラットブラック|4:フラットホワイト|5:セミグロスブラック|6:ピュアーブルー|7:ピュアーレッド|8:ピュアーイエロー|9:クリヤー|11:シルバー|12:呉海軍工廠グレイ|13:佐世保海軍工廠グレイ|14:舞鶴海軍工廠グレイ|15:横須賀海軍工廠グレイ|16:木甲板色|17:リノリウム甲板色|18:ダルレッド|19:ガンメタル|20:ライトガンメタル|21:イタリアンレッド|22:フラットベース|23:フラットクリヤー|24:セミグロスクリヤー|25:茶色|26:濃緑色|27:ジャーマングレイ|28:オリーブドラブ|29:オリーブドラブ2|30:ライトサンド|31:暗緑色2|32:明灰白色|33:灰緑色|34:ライトグレイ|35:インシグニアホワイト|36:ダークゴーストグレイ|37:ライトゴーストグレイ|38:フラットアルミ|39:レーシングホワイト|40:メタリックブラック|41:マイカブルー|42:マイカレッド|43:パールホワイト|44:メタリックオレンジ|45:レーシングブルー|46:ピュアーメタリックレッド|47:パールブルー|48:スパークリングシルバー|49:パールクリヤー|50:ブライトレッド|51:ピュアーオレンジ|52:クリヤーレッド|53:クリヤーオレンジ|54:ダークアイアン|55:ダークイエロー2|56:ダークグリーン2|57:レッドブラウン2|58:NATOグリーン|59:NATOブラウン|60:NATOブラック|61:メタリックグレイ|62:チタンゴールド|63:チタンシルバー|64:OD色|65:ラバーブラック|66:フラットフレッシュ|67:スモーク|68:クリヤーブルー|69:クリヤーイエロー|70:アルミシルバー|71:シャンパンゴールド|72:マイカシルバー|73:カーキ|74:フラットアース|75:バフ|76:イエローブラウン|77:ライトブラウン|78:フラットブルー|79:フラットレッド|80:フラットイエロー|81:調色用ブルー|82:調色用レッド|83:調色用イエロー|84:カモフラージュグレイ|85:ミディアムエアーグレイ" },
+            { brand: "タミヤ", series: "スプレー (TS)", type: "ラッカースプレー", prefix: "TS-", data: "1:レッドブラウン|2:ダークグリーン|3:ダークイエロー|4:ジャーマングレイ|5:オリーブドラブ|6:マットブラック|7:レーシングホワイト|8:イタリアンレッド|9:ブリティッシュグリーン|10:フレンチブルー|11:マルーン|12:オレンジ|13:クリヤー|14:ブラック|15:ブルー|16:イエロー|17:アルミシルバー|18:メタリックレッド|19:メタリックブルー|20:メタリックグリーン|21:ゴールド|22:ライトグリーン|23:ライトブルー|24:パープル|25:ピンク|26:ピュアーホワイト|27:マットホワイト|28:オリーブドラブ2|29:セミグロスブラック|30:シルバーリーフ|31:ブライトオレンジ|32:ヘイズグレイ|33:ダルレッド|34:キャメルイエロー|35:パークグリーン|36:蛍光レッド|37:ラベンダー|38:ガンメタル|39:マイカレッド|40:メタリックブラック|41:コーラルブルー|42:ライトガンメタル|43:レーシンググリーン|44:ブリリアントブルー|45:パールホワイト|46:ライトサンド|47:クロームイエロー|48:ガンシップグレイ|49:ブライトレッド|50:マイカブルー|51:レーシングブルー|52:キャンディーライムグリーン|53:ディープメタリックブルー|54:ライトメタリックブルー|55:ダークブルー|56:ブリリアントオレンジ|57:ブルーバイオレット|58:パールライトブルー|59:パールライトレッド|60:パールグリーン|61:NATOグリーン|62:NATOブラウン|63:NATOブラック|64:ダークマイカブルー|65:パールクリヤー|66:呉海軍工廠グレイ|67:佐世保海軍工廠グレイ|68:木甲板色|69:リノリウム甲板色|70:OD色|71:スモーク|72:クリヤーブルー|73:クリヤーオレンジ|74:クリヤーレッド|75:シャンパンゴールド|76:マイカシルバー|77:フラットフレッシュ|78:フィールドグレイ|79:セミグロスクリヤー|80:フラットクリヤー|81:ロイヤルライトグレイ|82:ラバーブラック|83:メタルシルバー|84:メタルゴールド|85:ブライトマイカレッド|86:ピュアーレッド|87:チタンゴールド|88:チタンシルバー|89:パールブルー|90:茶色|91:濃緑色|92:メタリックオレンジ|93:ピュアーブルー|94:メタリックグレイ|95:ピュアーメタリックレッド|96:蛍光オレンジ|97:パールイエロー|98:ピュアーオレンジ|99:舞鶴海軍工廠グレイ|100:ブライトガンメタル|101:ベースホワイト|102:コバルトグリーン" },
+            { brand: "タミヤ", series: "エアーモデルスプレー (AS)", type: "ラッカースプレー", prefix: "AS-", data: "1:灰緑色|2:明灰白色|3:グレイグリーン|4:グレイバイオレット|5:ライトブルー|6:オリーブドラブ|7:ニュートラルグレイ|8:ネイビーブルー|9:ダークグリーン|10:オーシャングレイ|11:ミディアムシーグレイ|12:シルバーメタル|13:グリーン|14:オリーブグリーン|15:タン|16:ライトグレイ|17:濃緑色|18:明灰緑色|19:インターミディエイトブルー|20:インシグニアホワイト|21:暗緑色2(日本海軍)|22:ダークアース|23:ライトグリーン(ドイツ空軍)|24:ダークグリーン(ドイツ空軍)|25:ダークゴーストグレイ|26:ライトゴーストグレイ|27:ガンシップグレイ2|28:ミディアムグレイ|29:灰緑色(日本海軍)|30:ダークグリーン2(イギリス空軍)|31:オーシャングレイ2(イギリス空軍)|32:ミディアムシーグレイ2(イギリス空軍)|33:シルバーグレイ" },
+            { brand: "タミヤ", series: "ポリカーボネート用スプレー (PS)", type: "ポリカーボネート用", prefix: "PS-", data: "1:ホワイト|2:レッド|3:ライトブルー|4:ブルー|5:ブラック|6:イエロー|7:オレンジ|8:ライトグリーン|9:グリーン|10:パープル|11:ピンク|12:シルバー|13:ゴールド|14:コッパー|15:メタリックレッド|16:メタリックブルー|17:メタリックグリーン|18:メタリックパープル|19:キャメルイエロー|20:蛍光レッド|21:パークグリーン|22:レーシンググリーン|23:ガンメタル|24:蛍光オレンジ|25:ブライトグリーン|27:蛍光イエロー|28:蛍光グリーン|29:蛍光ピンク|30:ブリリアントブルー|31:スモーク|32:コルサグレイ|33:チェリーレッド|34:ブライトレッド|35:ブルーバイオレット|36:フロストシルバー|37:フロストレッド|38:フロストブルー|39:フロストライトブルー|40:フロストピンク|41:ブライトシルバー|42:フロストイエロー|43:フロストオレンジ|44:フロストグリーン|45:フロストパープル|46:偏光パープル/グリーン|47:偏光ピンク/ゴールド|48:サテンシルバーアルマイト|49:スカイブルーアルマイト|50:スパークルピンクアルマイト|51:パープルアルマイト|52:シャンパンゴールドアルマイト|53:ラメフレーク|54:コバルトグリーン|55:フラットクリヤー|56:マスタードイエロー|57:パールホワイト|58:パールクリヤー|59:ダークメタリックブルー|60:ブライトマイカレッド|61:メタリックオレンジ|62:ピュアーオレンジ|63:ブライトガンメタル|SP:ダークブルー(特別企画)" },
+            { brand: "タミヤ", series: "ペイントマーカー", type: "油性マーカー", prefix: "", data: "X-1:ブラック(マーカー)|X-2:ホワイト(マーカー)|X-7:レッド(マーカー)|X-11:クロームシルバー(マーカー)|X-12:ゴールドリーフ(マーカー)|XF-1:フラットブラック(マーカー)" },
+            { brand: "タミヤ", series: "メイクアップ材/溶剤", type: "溶剤/下地", prefix: "", data: "87042:スーパーサーフェイサーL(グレイ)|87044:ファインサーフェイサーL(ホワイト)|87064:ファインサーフェイサーL(ライトグレイ)|87160:ファインサーフェイサーL(オキサイドレッド)|87146:ファインサーフェイサーL(ピンク)|87061:メタルプライマー(スプレー)|87152:ナイロン・PP用プライマー(スプレー)|87075:サーフェイサー(40mlビン)|87096:サーフェイサーホワイト(40mlビン)|87198:ペイントリターダー(ラッカー用)|87114:ペイントリターダー(アクリル用)|87118:プレペイントクリーナー(PC用)|87204:メタルプライマー(40mlビン)|87089:エアーブラシクリーナー(250ml)|82110:ラッカー溶剤(10ml)|87077:ラッカー溶剤(250ml)|87194:ラッカー溶剤リターダー入り(250ml)|81520:アクリル溶剤X-20A(10ml)|81030:アクリル溶剤X-20A(46ml)|81040:アクリル溶剤X-20A(250ml)|80020:エナメル溶剤X-20(10ml)|80030:エナメル溶剤X-20(40ml)|80040:エナメル溶剤X-20(250ml)|81043:スペアボトル角ビン(10cc)|81044:スペアボトル丸ビン(10cc)|81041:スペアボトル(23cc)|81042:スペアボトル(46cc)|87196:キャップラベル(ラッカー用)|87197:キャップラベル(アクリル用)|87228:PC-5 ブラック(ポリカ筆塗り)" },
+
+            // ----- GAIA NOTES 完全版 (V14 最終結合) -----
+            { brand: "ガイアノーツ", series: "ガイアカラー", type: "ラッカー", prefix: "", data: "001:ピュアホワイト|002:ピュアブラック|003:ブライトレッド|004:ウルトラブルー|005:サンシャインイエロー|006:フラットベース|007:クリアー|008:フラットクリアー|009:ブライトシルバー|010:ブライトゴールド|011:フラットホワイト|012:フラットブラック|013:ビリジアングリーン|014:ナチュラルブラウン|015:ピュアオレンジ|016:ブリリアントピンク|017:パープルヴァイオレット|018:エメラルドグリーン|019:ラベンダー|020:ガンメタル|021:セミグロスホワイト|022:セミグロスブラック|023:スカーレット|024:コバルトブルー|025:橙黄色|030:セミグロスクリアー|031:アルティメットホワイト|032:アルティメットブラック|033:純色シアン|034:純色マゼンタ|035:純色イエロー|036:純色グリーン|037:純色バイオレット|038:プライマリーメタリックレッド|039:プライマリーメタリックブルー|040:プライマリーメタリックイエロー|041:クリアーレッド|042:クリアーオレンジ|043:クリアーブラック|044:クリアーブルー|045:クリアーイエロー|046:クリアーブラウン|047:クリアーパープル|048:クリアーグリーン|049:クリアーピンク|050:クリアーホワイト|051:ノーツフレッシュ|052:ノーツフレッシュホワイト|053:ノーツフレッシュピンク|054:ノーツフレッシュオレンジ|059:サフレスフレッシュピンク|060:サフレスフレッシュオレンジ|061:ミッドナイトブルー|062:ミディアムブルー|063:ブルーグレー|071:ニュートラルグレー I|072:ニュートラルグレー II|073:ニュートラルグレー III|074:ニュートラルグレー IV|075:ニュートラルグレー V|101:蛍光ブルー|102:蛍光ピンク|103:蛍光レッド|104:蛍光グリーン|105:蛍光イエロー|106:蛍光オレンジ|107:蛍光イエローグリーン|108:蛍光ブルーグリーン|110:蛍光クリアー|121:スターブライト シルバー|122:スターブライト ゴールド|123:スターブライト ジュラルミン|124:スターブライト ブラス|125:スターブライト アイアン|126:スターブライト シャンパンゴールド|131:パールシルバー|132:パールゴールド|133:パールカッパー|134:プリズム パープルグリーン|135:プリズム ブルーグリーン|137:プリズム パステル ターコイズブルーイエロー|138:プリズム パステル チェリーピンクブルー|139:プリズム パステル ミントグリーンブルー" },
+            { brand: "ガイアノーツ", series: "ミリタリーカラー", type: "ラッカー", prefix: "", data: "201:ダークイエロー 1|202:オリーブグリーン|203:レッドブラウン|204:ダークイエロー 2|213:灰緑色|214:暗緑色|215:FS34079 ダークグリーン|216:FS34102 グリーン|217:FS30219 タン|218:FS36622 グレー|219:FS36440 ライトガルグレー|221:ジャーマングレー|222:オキサイドレッド|223:インテリアカラー" },
+            { brand: "ガイアノーツ", series: "鉄道模型用カラー", type: "ラッカー", prefix: "", data: "1000:ステンレスシルバー|1001:ライトステンレスシルバー|1002:ダークステンレスシルバー|1003:青15号|1004:ぶどう色2号|1005:ねずみ色1号|1006:灰色9号|1007:ダークグレー|1008:クリーム1号|1009:ローズピンク|1010:ぶどう色1号|1011:黒|1012:赤サビ|1013:黄サビ|1021:コンテナブルー|1022:コンテナレッド|1023:名鉄スカーレット|1024:西武101系イエロー|1025:西武2000系イエロー|1026:西武ベージュ|1027:西武レッド" },
+            { brand: "ガイアノーツ", series: "タクティカル レーベル", type: "ラッカー", prefix: "TL-", data: "001:NATOグリーン|002:NATOブラウン|003:NATOブラック|004:ライトグレー FS36251|005:ダークグレー FS36176" },
+            { brand: "ガイアノーツ", series: "プレミアムカラー", type: "ラッカー", prefix: "GP-", data: "02:プレミアムレッド|04:プレミアムガラスパール|05:ウルトラマリンブルー|08:プレミアムミラークローム|09:プリズムブルーブラック" },
+            { brand: "ガイアノーツ", series: "Ex-カラー", type: "ラッカー", prefix: "Ex-", data: "01:Ex-ホワイト|02:Ex-ブラック|03:Ex-クリアー|04:Ex-フラットクリアー|05:Ex-フラットホワイト|06:Ex-フラットブラック|07:Ex-シルバー|08:Ex-ゴールド|09:Ex-セミグロスクリアー プレミアム|10:Ex-フラットクリアー プレミアム" },
+            { brand: "ガイアノーツ", series: "ガイアエナメルカラー", type: "エナメル", prefix: "GE-", data: "01:ホワイト|02:ブラック|03:シアン|04:マゼンタ|05:イエロー|06:蛍光ブルー|07:蛍光レッド|08:蛍光イエロー|09:蛍光ピンク|10:蛍光グリーン|51:赤サビ|52:黄サビ|53:煤(すす)|54:オイル|55:埃(ほこり)" },
+            { brand: "ガイアノーツ", series: "溶剤/洗浄液", type: "溶剤/下地", prefix: "T-", data: "01S:ガイアカラー薄め液(小)|01M:ガイアカラー薄め液(中)|01L:ガイアカラー薄め液(大)|06M:ブラシマスター(中)|06L:ブラシマスター(大)|07M:モデレイト プラス(中)|09M:メタリックマスター(中)|09L:メタリックマスター(大)|02M:アクリル溶剤(中)|05S:エナメル系溶剤(小)|12:速乾性エナメル系溶剤|04S:ツールウォッシュ(小)|04M:ツールウォッシュ(中)|04L:ツールウォッシュ(大)|13M:マイルドツールウォッシュ(中)|14:プラクリーナープラス|10s:ブラシクリリン(中)|11r:ガイアペイントリムーバーR|03L:レジンウォッシュ(大)" },
+            { brand: "ガイアノーツ", series: "ツール/アクセサリー", type: "ツール", prefix: "G-", data: "01r:ブラシウォッシュ|02r:ニードルキャップ|03n:スペアボトル in レシピBOX|05n:newスペアボトル大|04a:精密綿棒|09r:マスキングコートR|06r:フィニッシュマスターR|06br:フィニッシュマスター極細R|12:マイクロセラブレード|13:スペアセラブレード|16:パテスティック|21:じぶん専用色見本帳|23:円形マスキングシート|23b:山型マスキングシート|23c:波型マスキングシート|18b:ペーパーパレットスクエア ブラック|22:多用途ミニブラシ|25:スペアボトル スクエア ブラシ付き" },
+            { brand: "ガイアノーツ", series: "接着剤/セメント", type: "ツール", prefix: "GPC-", data: "01:ABS用接着剤低粘度|02:樹脂入り高粘度タイプ|03:QS 流し込み強力速乾タイプ" },
+            { brand: "ガイアノーツ", series: "サーフェイサーエヴォ", type: "溶剤/下地", prefix: "GS-", data: "01:サーフェイサーエヴォ グレー|02:サーフェイサーエヴォ ホワイト|03:サーフェイサーエヴォ ブラック|04:サーフェイサーエヴォ オキサイドレッド|05:サーフェイサーエヴォ フレッシュ|06:サーフェイサーエヴォ シルバー|07:パステルピンク|08:スカイブルー|09:レモンイエロー|10:ガンメタ|11:パープル|12:ゴールド|13:クリアー" },
+            { brand: "ガイアノーツ", series: "プライマー", type: "溶剤/下地", prefix: "P-", data: "01a:ガイアマルチプライマーアドバンス" },
+            { brand: "ガイアノーツ", series: "イージーペインター", type: "ツール", prefix: "EP-", data: "01:イージーペインター|02:スペアカートリッジ|03:専用スペアボトル|04:QEアダプター" },
+            { brand: "ガイアノーツ", series: "パテ/UVジェル", type: "メイクアップ材", prefix: "M-", data: "03z:瞬間クリアパテ Z|07pw:瞬間カラーパテ ピュアホワイト|07Kn:瞬間カラーパテ ブラック|07Gn:瞬間カラーパテ グレー|07Fn:瞬間カラーパテ フレッシュ|07Bn:瞬間カラーパテ ブルー|07Rn:瞬間カラーパテ レッド|07Yn:瞬間カラーパテ イエロー|07cb:瞬間カラーパテ クリアーブルー|07cr:瞬間カラーパテ クリアーレッド|07cy:瞬間カラーパテ クリアーイエロー|04s:UVジェルクリアS|05s:UVジェルグルーS|09s:スーパーUVライト|08:クイックハードスプレー|10:瞬間接着剤低粘度ブラック" },
+            { brand: "ガイアノーツ", series: "デカール/マテリアル", type: "ツール", prefix: "", data: "77013:アーティフィシャルホール|NT001:激削ヤスリ|NT002:スジ彫りノギス|NT-003n:スタンピングスポンジ|CC-01:クラフタサーフェイサー|SMB-01:システムマーキングベーシック01|VSC-N1:システムマーキング N1|VSC-N1s:システムマーキング N1s|VSC-N2:システムマーキング N2|VSC-N3:システムマーキング N3|VCD-01:コンビネーションデカール01|VEX-01:EXコーション01|VOC-01:漢デカール|VOW-01:梵字デカール|VNC-02:ナンバリングデカールNEO|VCB-01:カーボンデカール|VOD-01:ワンポイントデカール|VNC-03:ナンバリングデカールNEO2|VMS-C01:透明マスキングシート|VMS-P:ピッチガイドシート|CMC-01:模型人TVコラボデカール|CNP-01:nippperコラボデカール|CDC-01:チョップデカール|CKD-01:デジカモデカール|CAV-01A:アンティークポット|77020:GND-01 ホイルゴールド|77021:GND-02 ホイルシルバー|77022:GND-03 ホイルレッド|Z-01:ガイア プレミアム ハンドウォッシュ Z|Z-02s:エアクリーニングリキッド(中)" },
+            { brand: "ガイアノーツ", series: "筆シリーズ", type: "ツール", prefix: "", data: "BFP01:#10/0 極細面相筆|BFP02:#00 極細面相筆|BFP03:#1 極細面相筆|BF001:#0 平筆|BF002:#2 平筆|BF003:#4 平筆|BF004:#6 平筆|BF005:#8 平筆|BSL01:#1 プレミアムセーブルライナー筆|BT001:#1 テクスチャ筆|81113:ストレーキング筆 1/2|81114:ストレーキング筆 1/4|81115:アンギュラー 1/2|81116:アンギュラー 1/4" },
+            { brand: "ガイアノーツドットコス", series: "コスプレ/造形用", type: "スプレー等", prefix: "", data: "DC-01:ガイアスプレー ブラック|DC-02:ガイアスプレー シルバー|DC-03:ガイアスプレー レッド|DC-09:ガイアスプレー ホワイト|DC-10:ガイアスプレー グレー|78014:BC-01 ガイアベースコート|78015:DC-05 ガイアブレストフォーム∞|78016:DC-06 エアクリーニングリキッド|78017:DC-07 ガイアマルチブラシ フラット|78018:DC-08 ガイアマルチブラシ アンギュラー" },
+            { brand: "ペベオ", series: "4ARTIST/ワックス", type: "マーカー等", prefix: "", data: "マーカーホワイト:4ARTIST MARKER ホワイト|マーカーブラック:4ARTIST MARKER ブラック|マーカーゴールド:4ARTIST MARKER ゴールド|マーカーシルバー:4ARTIST MARKER シルバー|マーカーコッパー:4ARTIST MARKER コッパー|76649:ギルディングワックス コッパー|76650:ギルディングワックス エンペラーゴールド|76651:ギルディングワックス シルバー" },
+            
+            // ----- GAIA NOTES 特化/キャラクター系列 -----
+            { brand: "ガイアノーツ", series: "ダンバインカラー", type: "ラッカー", prefix: "AM-", data: "01:オーラパープル1|02:オーラパープル2|03:オーラダークブルー|04:オーラグリーン1|05:オーラグリーン2|06:オーラペールブルー|07:オーラブルー" },
+            { brand: "ガイアノーツ", series: "ダンバインカラー(パール)", type: "ラッカー", prefix: "AML-", data: "01:オーラパールペールブルー|02:オーラパールシルバー|03:オーラパールホワイト" },
+            { brand: "ガイアノーツ", series: "ザブングルカラー", type: "ラッカー", prefix: "WM-", data: "01:ウォーカーブルー1|02:ウォーカーブルー2|03:ウォーカーホワイト|04:ウォーカーグリーン|05:ウォーカーダークブルー|06:ウォーカーレッド|07:ウォーカーダークグリーン|08:ウォーカーオレンジイエロー" },
+            { brand: "ガイアノーツ", series: "ザブングルカラー(限定)", type: "ラッカー", prefix: "WML-", data: "01:ウォーカーブルー(1)|02:ウォーカーグリーン" },
+            { brand: "ガイアノーツ", series: "エルガイムカラー", type: "ラッカー", prefix: "HM-", data: "01:ヘビーホワイト|02:ヘビーライトブラウン|03:ヘビーダークグレー|04:ヘビーライトグレー|05:ヘビーオレンジ|06:ヘビーブルーグレー|07:ヘビーダークパープル" },
+            { brand: "ガイアノーツ", series: "イデオンカラー", type: "ラッカー", prefix: "ID-", data: "01:イデ オリジナル レッド|02:イデ アレンジ レッド" },
+            { brand: "ガイアノーツ", series: "ガリアンカラー", type: "ラッカー", prefix: "PB-", data: "01:パンツァーレッド(1)|02:パンツァーレッド(2)" },
+            { brand: "ガイアノーツ", series: "ガリアンカラー(メタリック)", type: "ラッカー", prefix: "PBL-", data: "01:メタリック パンツァーレッド" },
+            { brand: "ガイアノーツ", series: "エルドランカラー", type: "ラッカー", prefix: "EL-", data: "01:レモンイエロー|02:ライラック|03:エルドランゴールド" },
+            { brand: "ガイアノーツ", series: "勇者カラー", type: "ラッカー", prefix: "BR-", data: "01:ブレイブブラック|02:シャインイエロー|03:アイボリーホワイト|04:ゴールデンイエロー|05:ペールブルー" },
+            { brand: "ガイアノーツ", series: "ボトムズカラー", type: "ラッカー", prefix: "AT-", data: "01:グリーン|02:ライトグリーン|03:ブルーグレー|04:パープルグレー|05:ダークブルー|06:ブルー|07:ペールグリーン|08:ライトブルー|09:フォグブルー|10:パープル|11:アイスグリーン|12:ボルドー|13:オレンジ|14:レザーブラウン|15:コバルトグリーン|16:ブラッドレッド|17:ホワイトグレー|18:ダークバイオレット|19:カーマイン|20:オレンジイエロー|21:ローズピンク|22:ネービーブルー|23:ペンキレッド|24:アンバー|25:シャドウブラック|26:スレートブラック|27:スチールブラック" },
+            { brand: "ガイアノーツ", series: "ダグラムカラー", type: "ラッカー", prefix: "CB-", data: "01:アイアンブルー|02:レッド|03:ライトグレー|04:グレーグリーン|05:グレー|06:ライトブルーグレー|07:ライトグレーグリーン|08:ダークグリーン|09:ライトブラウン|10:ココアブラウン|11:グレーバイオレット|12:ダークグリーン(2)|13:カーキ|14:ライトカーキ|15:コバルトブルー|16:ダークパープル|17:モスグリーン|18:ラベンダー|19:デザートイエロー|20:マホガニー|21:ダークレッド|22:ブルーホワイト|23:ブラウン|24:モスパープル|25:デザートオレンジ" },
+            { brand: "ガイアノーツ", series: "サイバーフォーミュラ", type: "ラッカー", prefix: "CM-", data: "01:ホワイト|02:シグナルレッド|03:シャーシグレー|04:タイヤブラック|05:グリーンホワイト|06:クリムゾンレッド|07:スカイブルー|08:コバルトブルー(2)|09:ライラックピンク|10:ピンク|11:クリームイエロー|12:バイオレット" },
+            { brand: "ガイアノーツ", series: "クラッシャージョウ", type: "ラッカー", prefix: "CJ-", data: "01:シーブルー|02:ミディアムレッド|03:ダークグレー" },
+            { brand: "ガイアノーツ", series: "メカトロウィーゴ", type: "ラッカー", prefix: "WG-", data: "01:うすみどり|02:みずいろ|03:あいぼりー|04:らいとおれんじ|05:ぴんく|06:れもん|07:あっしゅ|08:まるーん" },
+            { brand: "ガイアノーツ", series: "アルカナディア", type: "ラッカー", prefix: "AD-", data: "01:アルカナ ブラウン|02:アルカナ ホワイト|03:アルカナ ゴールド" },
+            { brand: "ガイアノーツ", series: "創彩少女庭園", type: "ラッカー", prefix: "SSS", data: "01:結城 まどか カラーセット|02:小鳥遊 暦 カラーセット|03:佐伯 リツカ カラーセット" },
+            { brand: "ガイアノーツ", series: "創彩×FAガール", type: "ラッカー", prefix: "SSFG-", data: "01:源内 あお・ブラウン|02:若葉女子校・紺|03:若葉女子校・薄紫|04:若葉女子校・モノクロームベージュ|05:寿 武希子・グリーン" },
+            { brand: "ガイアノーツ", series: "FAガール", type: "ラッカー", prefix: "FG-", data: "01:プラスチックフレッシュ|02:ベースフレッシュ|03:シャドウフレッシュ|04:アーマーグレー|05:インナーブラック|06:プラチナブロンドベース|07:プラチナブロンドシャドウ|08:ブロンドベース|09:ブロンドシャドウ|10:ホワイトフレッシュ|11:プラスチックブラウンフレッシュ|12:轟雷装甲ブラウン|13:スティレット装甲ブルー" },
+            { brand: "ガイアノーツ", series: "ヘキサギア", type: "ラッカー", prefix: "HG-", data: "01:ヘキサホワイト|02:ヘキサバイオレット|03:ヘキサフレームガンメタル|04:ヘキサダークグリーン|05:ヘキサデザートイエロー|06:ヘキサレッド|07:ヘキサブルー|08:ヘキサブラック|09:ヘキサグレー" },
+            { brand: "ガイアノーツ", series: "エヴァンゲリオン", type: "ラッカー", prefix: "EV-", data: "01:エヴァパープル|02:エヴァグリーン|03:エヴァナイトパープル|04:エヴァネオングリーン|05:エヴァオレンジイエロー|06:エヴァレッド|07:エヴァイエロー|08:エヴァオレンジ|09:エヴァパープルグレー|10:エヴァダークグレー|11:エヴァプロトイエロー|12:エヴァピンク|13:エヴァダークパープル|14:エヴァダークブルー|15:エヴァヴァーミリオン|16:エヴァ マリピンク|17:エヴァ マリブラウン|18:エヴァ アスカレッド|19:エヴァ アスカオレンジ|20:エヴァ レイホワイト|21:エヴァ レイライトブルー" },
+            { brand: "ガイアノーツ", series: "ティタノマキア", type: "ラッカー", prefix: "NTC-", data: "01:ハウンドブラック|02:ハウンドシルバー" },
+            { brand: "ガイアノーツ", series: "NAZCA エナメル", type: "エナメル", prefix: "NE-", data: "001:デントグレー|002:シャドウブラウン|003:ピンポイントシルバー" },
+            { brand: "ガイアノーツ", series: "NAZCA (ナスカ)", type: "ラッカー", prefix: "NC-", data: "001:スチールホワイト|002:フロストマットブラック|003:フレイムレッド|004:ミリオンブルー|005:ウォームライトグレー|006:ブルーフォグホワイト|007:ジョイントグレー|008:ニュートラルホワイト|009:コバルトバイオレット|010:マンダリンオレンジ|011:フラットシルバー|012:ディープカーキ|013:ブラストカーキ|014:マンダリンイエロー|015:ダークブルーイッシュパープル" },
+            { brand: "ガイアノーツ", series: "NAZCA メカサフ", type: "ラッカー/サフ", prefix: "NP-", data: "001:メカサフ ヘヴィ|002:メカサフ ライト|004:メカサフ スーパーヘヴィ|005:メカサフ ピンク" }
         ];
 
         // 啟動時自動解壓縮並合併至 masterPaintDB (Initialization Sequence)
@@ -455,7 +484,6 @@
                 const suffix = group.suffix || '';
                 const fullId = group.prefix + num;
                 
-                // 防呆：避免與預設帶有 ref 的塗料重複
                 if (!masterPaintDB.some(p => p.brand === group.brand && p.id === fullId)) {
                     masterPaintDB.push({
                         brand: group.brand,
@@ -535,7 +563,7 @@
             });
 
             if (topTermsPerCategory.length === 0) {
-                container.innerHTML = '<span class="text-gray-400 italic">まだ履歴がありません (無紀錄)</span>';
+                container.innerHTML = '<span class="text-gray-400 italic">まだ履歴がありません</span>';
                 return;
             }
 
@@ -632,9 +660,9 @@
             const uniqueMakers = [...new Set(myProjects.map(p => p.maker))].filter(Boolean).sort();
             const uniqueGrades = [...new Set(myProjects.map(p => p.grade))].filter(Boolean).sort();
 
-            filterMaker.innerHTML = '<option value="ALL">すべて (全部)</option>';
+            filterMaker.innerHTML = '<option value="ALL">すべて</option>';
             uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
-            filterGrade.innerHTML = '<option value="ALL">すべて (全部)</option>';
+            filterGrade.innerHTML = '<option value="ALL">すべて</option>';
             uniqueGrades.forEach(g => filterGrade.innerHTML += `<option value="${g}">${g}</option>`);
 
             if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
@@ -674,7 +702,7 @@
                         <h3 class="font-bold text-gray-800 text-lg mb-1 truncate">${proj.name || '名称未設定'}</h3>
                         <p class="text-xs text-gray-400">更新: ${dateStr}</p>
                     </div>
-                    <div class="bg-gray-50 p-3 border-t border-gray-100 flex justify-end space-x-2"><button class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" onclick="deleteProject('${proj.id}', event)" title="刪除"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>
+                    <div class="bg-gray-50 p-3 border-t border-gray-100 flex justify-end space-x-2"><button class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" onclick="deleteProject('${proj.id}', event)" title="削除"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>
                 `;
                 card.addEventListener('click', (e) => { if(!e.target.closest('button')) loadProjectToEditor(proj.id); });
                 projectGrid.appendChild(card);
@@ -713,7 +741,7 @@
             const projData = { id: currentEditingProjectId, maker: finalMaker, grade: finalGrade, name: document.getElementById('projectName').value.trim(), image: compressedImage, markers: JSON.parse(JSON.stringify(markers)), updatedAt: Date.now() };
             const idx = myProjects.findIndex(p => p.id === currentEditingProjectId);
             if(idx >= 0) { myProjects[idx] = projData; } else { myProjects.unshift(projData); }
-            saveProjects(); alert('プロジェクトを保存しました。'); renderProjectList(); switchView('view-projects');
+            saveProjects(); alert('保存しました。'); renderProjectList(); switchView('view-projects');
         });
 
         function loadProjectToEditor(id) {
@@ -841,7 +869,7 @@
                     let refHtml = match.ref ? `<div class="text-[10px] text-gray-400 truncate mt-0.5">参考: ${match.ref}</div>` : '';
                     li.innerHTML = `<div class="flex justify-between items-center"><span class="font-bold">${match.name}</span><div class="flex items-center text-xs"><span class="${qtyColor} font-bold mr-2">在庫:${match.qty}</span><span class="text-slate-400">${match.brand}</span></div></div>${refHtml}`;
                     li.addEventListener('click', () => {
-                        if(match.qty <= 0) alert("警告：この塗料は現在在庫が「0」です。");
+                        if(match.qty <= 0) alert("警告：在庫が「0」です。");
                         paintInput.value = match.name; autocompleteList.classList.add('hidden');
                     });
                     autocompleteList.appendChild(li);
@@ -878,7 +906,7 @@
 
         function updateProjectBomList() {
             paintListUI.innerHTML = '';
-            if (markers.length === 0) { paintListUI.innerHTML = '<p class="text-sm text-gray-500 italic">まだ塗料が登録されていません。</p>'; return; }
+            if (markers.length === 0) { paintListUI.innerHTML = '<p class="text-sm text-gray-500 italic">まだ登録されていません。</p>'; return; }
             const groupedMarkers = markers.reduce((acc, marker, originalIndex) => {
                 const brand = marker.brand || 'その他'; if (!acc[brand]) acc[brand] = []; acc[brand].push({ ...marker, displayIndex: originalIndex + 1 }); return acc;
             }, {});
@@ -918,8 +946,8 @@
             const uniqueMakers = [...new Set(myPaintInventory.map(p => p.brand))].filter(Boolean).sort();
             const uniqueTypes = [...new Set(myPaintInventory.map(p => p.type))].filter(Boolean).sort();
 
-            filterMaker.innerHTML = '<option value="ALL">メーカー: すべて (廠商)</option>'; uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
-            filterType.innerHTML = '<option value="ALL">種類: すべて (塗料類型)</option>'; uniqueTypes.forEach(t => filterType.innerHTML += `<option value="${t}">${t}</option>`);
+            filterMaker.innerHTML = '<option value="ALL">メーカー: すべて</option>'; uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
+            filterType.innerHTML = '<option value="ALL">種類: すべて</option>'; uniqueTypes.forEach(t => filterType.innerHTML += `<option value="${t}">${t}</option>`);
 
             if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
             if (uniqueTypes.includes(currentType)) filterType.value = currentType;
@@ -954,7 +982,6 @@
 
             if (matches.length > 0) {
                 masterAutocompleteList.classList.remove('hidden');
-                // 限制顯示筆數以優化效能 (防呆)
                 const displayMatches = matches.slice(0, 50); 
                 displayMatches.forEach(match => {
                     const li = document.createElement('li'); li.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 flex justify-between items-center';
@@ -989,7 +1016,7 @@
                     });
                     masterAutocompleteList.appendChild(li);
                 });
-            } else { masterAutocompleteList.classList.remove('hidden'); masterAutocompleteList.innerHTML = '<li class="p-3 text-sm text-gray-500 text-center italic">見つかりません。未登録の塗料です。</li>'; }
+            } else { masterAutocompleteList.classList.remove('hidden'); masterAutocompleteList.innerHTML = '<li class="p-3 text-sm text-gray-500 text-center italic">見つかりません。</li>'; }
         });
 
         function renderInventoryList() {
@@ -1018,7 +1045,7 @@
                 const heartFill = item.isFavorite ? 'currentColor' : 'none';
                 let purchaseBtnHtml = '';
                 if (item.status === '欲しい' && item.qty > 0) {
-                    purchaseBtnHtml = `<div class="mt-3 pt-2 border-t border-gray-100 flex justify-end"><button onclick="purchaseItem('${item.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>購入 (入庫する)</button></div>`;
+                    purchaseBtnHtml = `<div class="mt-3 pt-2 border-t border-gray-100 flex justify-end"><button onclick="purchaseItem('${item.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>購入</button></div>`;
                 }
 
                 let refHtml = item.ref ? `<div class="text-[10px] text-indigo-500 mt-1">参考: ${item.ref}</div>` : '';
@@ -1039,7 +1066,7 @@
                             <button onclick="toggleFavorite('${item.uid}')" class="${heartColor} p-1 transition" title="お気に入り"><svg class="w-6 h-6" fill="${heartFill}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></button>
                             <select onchange="updateItemStatus('${item.uid}', this.value)" class="text-xs border border-gray-300 rounded p-1 bg-white outline-none focus:ring-1 focus:ring-blue-500"><option value="所持" ${item.status === '所持' ? 'selected' : ''}>所持</option><option value="欲しい" ${item.status === '欲しい' ? 'selected' : ''}>欲しい</option></select>
                             <div class="flex items-center border border-gray-300 rounded bg-white h-8"><button onclick="updateItemQty('${item.uid}', -1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-red-500 transition h-full font-bold">-</button><input type="number" readonly value="${item.qty}" class="w-8 text-center text-sm font-bold text-gray-700 border-x border-gray-200 h-full outline-none bg-transparent"><button onclick="updateItemQty('${item.uid}', 1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-blue-500 transition h-full font-bold">+</button></div>
-                            <button onclick="removeItem('${item.uid}')" class="text-red-400 hover:text-red-600 p-1 transition" title="刪除"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                            <button onclick="removeItem('${item.uid}')" class="text-red-400 hover:text-red-600 p-1 transition" title="削除"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                         </div>
                     </div>
                     ${purchaseBtnHtml}
