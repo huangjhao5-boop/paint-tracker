@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visual Paint Tracker - 塗裝配方視覺化系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        canvas { user-select: none; -webkit-user-select: none; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+        .view-section.active-flex { display: flex; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800 font-sans pb-16 md:pb-0 md:pt-16">
+
+    <!-- ナビゲーションバー -->
+    <nav class="fixed bottom-0 md:top-0 md:bottom-auto left-0 w-full bg-slate-800 text-slate-300 z-50 shadow-lg flex justify-around md:justify-start">
+        <button class="nav-btn active flex-1 md:flex-none py-3 px-4 md:px-6 hover:bg-slate-700 hover:text-white transition flex flex-col md:flex-row items-center font-bold text-blue-400 border-t-2 md:border-t-0 md:border-b-2 border-blue-400" data-target="view-projects">
+            <svg class="w-6 h-6 md:mr-2 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            <span class="text-[10px] md:text-sm mt-1 md:mt-0">專案/配方</span>
+        </button>
+        <button class="nav-btn flex-1 md:flex-none py-3 px-4 md:px-6 hover:bg-slate-700 hover:text-white transition flex flex-col md:flex-row items-center font-bold" data-target="view-inventory">
+            <svg class="w-6 h-6 md:mr-2 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+            <span class="text-[10px] md:text-sm mt-1 md:mt-0">庫存管理</span>
+        </button>
+        <button class="nav-btn flex-1 md:flex-none py-3 px-4 md:px-6 hover:bg-slate-700 hover:text-white transition flex flex-col md:flex-row items-center font-bold" data-target="view-dashboard">
+            <svg class="w-6 h-6 md:mr-2 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <span class="text-[10px] md:text-sm mt-1 md:mt-0">所持狀況</span>
+        </button>
+        <button class="nav-btn flex-1 md:flex-none py-3 px-4 md:px-6 hover:bg-slate-700 hover:text-white transition flex flex-col md:flex-row items-center font-bold" data-target="view-settings">
+            <svg class="w-6 h-6 md:mr-2 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <span class="text-[10px] md:text-sm mt-1 md:mt-0">系統設定</span>
+        </button>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="max-w-5xl mx-auto md:p-4">
+
+        <!-- ========================================== -->
+        <!-- VIEW 1: 專案列表 (Recipe Management) -->
+        <!-- ========================================== -->
+        <div id="view-projects" class="view-section active">
+            <div class="bg-white md:rounded-xl shadow-sm p-6 mb-4">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-800">塗裝專案一覽</h2>
+                    <button id="createNewProjectBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow font-bold flex items-center transition">
+                        <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        新規作成
+                    </button>
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">メーカー (廠商)</label>
+                            <select id="filterMaker" class="w-full bg-white border border-slate-300 rounded p-2 text-sm text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="ALL">すべて (全部)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">グレード/スケール (等級/比例)</label>
+                            <select id="filterGrade" class="w-full bg-white border border-slate-300 rounded p-2 text-sm text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="ALL">すべて (全部)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">作品名 (關鍵字搜尋)</label>
+                            <input type="text" id="filterName" placeholder="プロジェクト名で検索..." class="w-full bg-white border border-slate-300 rounded p-2 text-sm text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-200 pt-2 flex flex-wrap items-center gap-2 text-xs">
+                        <span class="text-slate-500 font-bold flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>常用條件:
+                        </span>
+                        <div id="projectQuickFilters" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <div id="projectGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 1-B: 專案編輯器 -->
+        <!-- ========================================== -->
+        <div id="view-project-edit" class="view-section">
+            <div class="bg-white md:rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-slate-800 text-white p-4 flex justify-between items-center">
+                    <h2 class="text-xl font-bold flex items-center">
+                        <button id="backToProjectsBtn" class="mr-3 text-slate-400 hover:text-white transition">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        </button>
+                        專案編輯 (エディター)
+                    </h2>
+                    <button id="saveProjectBtn" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-sm font-bold transition shadow">
+                        保存 (EEPROM書き込み)
+                    </button>
+                </div>
+                <div class="p-4 bg-slate-700">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm text-slate-300 mb-1">メーカー (廠商)</label>
+                            <div class="flex space-x-2">
+                                <select id="maker" class="w-full bg-slate-600 border-slate-500 rounded p-2 text-white outline-none">
+                                    <optgroup label="キャラクター (角色/機甲)">
+                                        <option value="BANDAI (バンダイ)">BANDAI (バンダイ)</option>
+                                        <option value="KOTOBUKIYA (コトブキヤ)">KOTOBUKIYA (コトブキヤ)</option>
+                                        <option value="Good Smile Company">Good Smile Company</option>
+                                        <option value="WAVE (ウェーブ)">WAVE (ウェーブ)</option>
+                                        <option value="VOLKS (ボークス)">VOLKS (ボークス)</option>
+                                        <option value="PLUM (プラム)">PLUM (プラム)</option>
+                                    </optgroup>
+                                    <optgroup label="スケールモデル (軍事/汽車/模型)">
+                                        <option value="TAMIYA (タミヤ)">TAMIYA (タミヤ)</option>
+                                        <option value="HASEGAWA (ハセガワ)">HASEGAWA (ハセガワ)</option>
+                                        <option value="AOSHIMA (アオシマ)">AOSHIMA (アオシマ)</option>
+                                        <option value="FUJIMI (フジミ)">FUJIMI (フジミ)</option>
+                                    </optgroup>
+                                    <optgroup label="その他">
+                                        <option value="その他">その他 (自訂)</option>
+                                    </optgroup>
+                                </select>
+                                <input type="text" id="customMaker" placeholder="自訂廠商" class="hidden w-1/2 bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-300 mb-1">グレード/スケール (等級/比例)</label>
+                            <div class="flex space-x-2">
+                                <select id="grade" class="w-full bg-slate-600 border-slate-500 rounded p-2 text-white outline-none">
+                                    <optgroup label="ガンプラ (Gunpla)">
+                                        <option value="PG (1/60)">PG (1/60)</option>
+                                        <option value="MG (1/100)">MG (1/100)</option>
+                                        <option value="RG (1/144)">RG (1/144)</option>
+                                        <option value="HG (1/144)">HG (1/144)</option>
+                                        <option value="EG (1/144)">EG (1/144)</option>
+                                        <option value="MGSD">MGSD</option>
+                                        <option value="SD">SD</option>
+                                    </optgroup>
+                                    <optgroup label="スケールモデル (Car/Military)">
+                                        <option value="1/24">1/24 (車/Car)</option>
+                                        <option value="1/32">1/32 (航空機/Aircraft)</option>
+                                        <option value="1/35">1/35 (戦車/Military)</option>
+                                        <option value="1/48">1/48 (軍事/Military)</option>
+                                        <option value="1/72">1/72 (軍事/Military)</option>
+                                        <option value="1/700">1/700 (艦船/Ship)</option>
+                                    </optgroup>
+                                    <optgroup label="フィギュア/美少女プラモ (Figure)">
+                                        <option value="1/7">1/7</option>
+                                        <option value="1/8">1/8</option>
+                                        <option value="1/10">1/10</option>
+                                        <option value="1/12">1/12</option>
+                                        <option value="Non-scale">Non-scale (ノンスケール)</option>
+                                    </optgroup>
+                                    <optgroup label="その他">
+                                        <option value="その他">その他 (自訂)</option>
+                                    </optgroup>
+                                </select>
+                                <input type="text" id="customGrade" placeholder="自訂比例" class="hidden w-1/2 bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-300 mb-1">作品名 (如: デスティニー)</label>
+                            <input type="text" id="projectName" placeholder="例: デスティニー" class="w-full bg-slate-600 border-slate-500 rounded p-2 text-white placeholder-slate-400 outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div class="mb-4">
+                        <label class="block font-semibold mb-2 text-gray-700">1. 写真をアップロード (上傳照片)</label>
+                        <input type="file" id="imageLoader" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+
+                    <div class="mb-2 flex justify-between items-end">
+                        <label class="block font-semibold text-gray-700">2. 画像をクリックして塗料を指定 <span class="text-sm font-normal text-blue-600">(ラベルドラッグ可能)</span></label>
+                        <button id="downloadBtn" class="bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200 px-3 py-1.5 rounded text-sm transition hidden font-bold">
+                            画像DL (下載圖片)
+                        </button>
+                    </div>
+                    
+                    <div id="canvasContainer" class="relative border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center min-h-[300px] overflow-hidden">
+                        <span id="placeholderText" class="text-gray-400">画像がありません</span>
+                        <canvas id="paintCanvas" class="hidden cursor-crosshair max-w-full shadow-sm"></canvas>
+                    
+                        <div id="paintModal" class="absolute hidden bg-white p-4 rounded shadow-xl border border-gray-200 z-10 w-64 md:w-80">
+                            <h3 class="font-bold text-sm mb-2">使用する塗料を入力 <span class="text-xs font-normal text-gray-500">(所持から)</span></h3>
+                            <div class="relative">
+                                <input type="text" id="paintInput" class="w-full border rounded p-2 text-sm mb-3" placeholder="例: C1, LP1, ホワイト..." autocomplete="off">
+                                <ul id="autocompleteList" class="absolute z-20 w-full bg-white border border-gray-200 shadow-lg rounded mt-[-8px] hidden max-h-48 overflow-y-auto left-0"></ul>
+                            </div>
+                            <div class="flex justify-end space-x-2">
+                                <button id="cancelPaint" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm">キャンセル</button>
+                                <button id="savePaint" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">決定</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 p-6 border-t border-gray-200">
+                    <h2 class="font-bold text-lg mb-3">使用塗料リスト (BOM)</h2>
+                    <div id="paintList" class="space-y-4">
+                        <p class="text-sm text-gray-500 italic">まだ塗料が登録されていません。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: 庫存管理 (Inventory) -->
+        <!-- ========================================== -->
+        <div id="view-inventory" class="view-section bg-white md:rounded-xl shadow-lg flex-col min-h-[80vh]">
+            <div class="bg-slate-800 text-white p-4 flex items-center shadow-md md:rounded-t-xl">
+                <h2 class="text-xl font-bold flex items-center">ペイントマネージャー (庫存管理)</h2>
+            </div>
+            
+            <!-- 搜尋與新增 -->
+            <div class="bg-white p-4 border-b border-gray-200 z-20 relative">
+                <div class="relative">
+                    <div class="flex items-center bg-gray-50 border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500">
+                        <div class="px-3 text-gray-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></div>
+                        <input type="text" id="masterSearchInput" placeholder="型番、名称を入力 (例: TS14, LG1, レッド)..." class="w-full py-2 outline-none bg-transparent text-sm" autocomplete="off">
+                    </div>
+                    <ul id="masterAutocompleteList" class="absolute w-full bg-white border border-gray-200 shadow-xl rounded-b-lg mt-1 hidden max-h-64 overflow-y-auto left-0 z-50"></ul>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex bg-white shadow-sm z-10 text-sm font-medium text-center text-gray-500 border-b border-gray-200">
+                <button class="tab-btn flex-1 py-3 text-blue-600 border-b-2 border-blue-600 font-bold" data-status="所持">所持 (擁有)</button>
+                <button class="tab-btn flex-1 py-3 hover:text-gray-700 hover:bg-gray-50 transition" data-status="欲しい">欲しい (預購)</button>
+                <button class="tab-btn flex-1 py-3 hover:text-gray-700 hover:bg-gray-50 transition" data-status="お気に入り">お気に入り (喜歡)</button>
+            </div>
+
+            <!-- 庫存列表過濾區 -->
+            <div class="bg-slate-50 p-3 border-b border-gray-200 text-sm">
+                <div class="flex flex-col md:flex-row gap-2 mb-2">
+                    <select id="invFilterMaker" class="w-full md:w-1/2 bg-white border border-slate-300 rounded p-2 text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="ALL">メーカー: すべて (廠商)</option>
+                    </select>
+                    <select id="invFilterType" class="w-full md:w-1/2 bg-white border border-slate-300 rounded p-2 text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
+                        <option value="ALL">種類: すべて (塗料類型)</option>
+                    </select>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <span class="text-slate-500 font-bold flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>常用條件:
+                    </span>
+                    <div id="invQuickFilters" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <!-- List -->
+            <div class="flex-grow overflow-y-auto p-4 bg-gray-50 md:rounded-b-xl">
+                <ul id="inventoryListUI" class="space-y-2"></ul>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: 所持狀況 (Dashboard) -->
+        <!-- ========================================== -->
+        <div id="view-dashboard" class="view-section">
+            <div class="bg-white md:rounded-xl shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                    所持状況モニター (Dashboard)
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    <div class="bg-blue-50 border border-blue-100 rounded-lg p-4 text-center">
+                        <div class="text-sm text-blue-600 font-bold mb-1">総所持数 (Total)</div>
+                        <div class="text-3xl font-black text-blue-800" id="statTotalQty">0 <span class="text-base font-normal">本</span></div>
+                    </div>
+                    <div class="bg-green-50 border border-green-100 rounded-lg p-4 text-center">
+                        <div class="text-sm text-green-600 font-bold mb-1">登録色数 (Colors)</div>
+                        <div class="text-3xl font-black text-green-800" id="statTotalKinds">0 <span class="text-base font-normal">種</span></div>
+                    </div>
+                    <div class="bg-rose-50 border border-rose-100 rounded-lg p-4 text-center">
+                        <div class="text-sm text-rose-600 font-bold mb-1">欲しいリスト (Wishlist)</div>
+                        <div class="text-3xl font-black text-rose-800" id="statWishlist">0 <span class="text-base font-normal">種</span></div>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-lg text-slate-700 mb-4 border-b pb-2">メーカー別 保有割合 (Brand Ratio)</h3>
+                <div id="brandStatsContainer" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: 系統設定 (Settings) -->
+        <!-- ========================================== -->
+        <div id="view-settings" class="view-section">
+            <div class="bg-white md:rounded-xl shadow-lg p-6 max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    システム設定 (Config)
+                </h2>
+                
+                <div class="space-y-6">
+                    <div class="border border-gray-200 rounded-lg p-5">
+                        <h3 class="font-bold text-gray-800 mb-2">データのバックアップ (資料備份)</h3>
+                        <p class="text-sm text-gray-500 mb-4">在庫やプロジェクトのデータをJSON形式でファイルに保存します。機種変更時などに利用してください。</p>
+                        <div class="flex space-x-3">
+                            <button id="exportBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                                エクスポート (匯出)
+                            </button>
+                            <label class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm font-bold shadow transition cursor-pointer">
+                                インポート (匯入)
+                                <input type="file" id="importFile" accept=".json" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="border border-red-200 rounded-lg p-5 bg-red-50">
+                        <h3 class="font-bold text-red-700 mb-2">初期化 (Danger Zone)</h3>
+                        <p class="text-sm text-red-600 mb-4">保存されているデータ（SRAM）をすべて消去します。この操作は元に戻せません。</p>
+                        <div class="flex space-x-3">
+                            <button id="resetProjectsBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                                專案履歴を消去
+                            </button>
+                            <button id="resetInventoryBtn" class="bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded text-sm font-bold shadow transition">
+                                在庫データを全消去
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 新增：免責聲明區塊 (Legal Disclaimer) -->
+                    <div class="border border-yellow-200 rounded-lg p-5 bg-yellow-50">
+                        <h3 class="font-bold text-yellow-800 mb-2 flex items-center">
+                            <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            免責聲明 (Disclaimer)
+                        </h3>
+                        <p class="text-xs text-yellow-700 leading-relaxed">
+                            本アプリケーション内に記載されているすべての塗料名称、ブランド名、および商標（GSIクレオス、タミヤ、ガイアノーツ等）は、それぞれの権利所有者に帰属します。<br>
+                            本ツールは個人が開発した非公式（Unofficial）の管理用アプリケーションであり、各メーカーとは一切の関係がありません。<br>
+                            データの正確性については保証いたしません。実際の使用にあたってはメーカー公式の情報を確認してください。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JavaScript Logic -->
+    <!-- ========================================== -->
+    <script>
+        // === 0. Global Utilities ===
+        function generateUid() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+        // === 1. State Management (EEPROM & ROM) ===
+        // 為了極致優化效能，我們將所有資料庫都寫入壓縮陣列中。
+        // masterPaintDB 僅作為執行時的動態陣列 (RAM)。
+        const masterPaintDB = [];
+
+        // 數據壓縮陣列 (Data Compression Payload) - 涵蓋 GSI全系, TAMIYA, GAIA NOTES
+        const compressedDB = [
+            // ----- GSI CREOS -----
+            { 
+                brand: "GSIクレオス", series: "Mr.カラー", type: "ラッカー", prefix: "C-", 
+                // 完整補齊 C1~175, C181~189, C301~340, C351~395, C511~515
+                data: "1:ホワイト（白）|2:ブラック（黒）|3:レッド（赤）|4:イエロー（黄）|5:ブルー（青）|6:グリーン（緑）|7:ブラウン（茶）|8:シルバー（銀）|9:ゴールド（金）|10:カッパー（銅）|11:ガルグレー|12:オリーブドラブ(1)|13:ニュートラルグレー|14:ネイビーブルー|15:暗緑色(中島系)|16:濃緑色|17:RLM71ダークグリーン|18:RLM70ブラックグリーン|19:サンディブラウン|20:ライトブルー|21:ミドルストーン|22:ダークアース|23:ダークグリーン(2)|25:ダークシーグレー|26:ダックエッググリーン|27:機体内部色|28:黒鉄色|29:艦底色|30:フラットベース|31:軍艦色(1)|32:軍艦色(2)|33:つや消しブラック|34:スカイブルー|35:明灰白色|36:RLM74グレーグリーン|37:RLM75グレーバイオレット|38:オリーブドラブ(2)|39:ダークイエロー|40:ジャーマングレー|41:レッドブラウン|42:マホガニー|43:ウッドブラウン|44:タン|45:セールカラー|46:クリアー|47:クリアーレッド|48:クリアーイエロー|49:クリアーオレンジ|50:クリアーブルー|51:薄茶色|52:フィールドグレー|54:カーキグリーン|55:カーキ|56:明灰緑色|57:青竹色|58:黄橙色|59:オレンジ|60:RLM02グレー|61:焼鉄色|62:つや消しホワイト|63:ピンク|64:ルマングリーン|65:インディブルー|66:デイトナグリーン|67:パープル|68:モンザレッド|69:グランプリホワイト|70:ダークグリーン|71:ミッドナイトブルー|72:ミディアムブルー|73:エアクラフトグレー|74:エアスペリオリティーブルー|75:メタリックレッド|76:メタリックブルー|77:メタリックグリーン|78:メタルブラック|79:シャインレッド|80:コバルトブルー|81:あずき色|90:シャインシルバー|92:セミグロスブラック|97:灰色9号|100:マルーン|101:スモークグレー|104:ガンクローム|107:キャラクターホワイト|108:キャラクターレッド|109:キャラクターイエロー|110:キャラクターブルー|111:キャラクターフレッシュ(1)|112:キャラクターフレッシュ(2)|113:RLM04イエロー|114:RLM23レッド|115:RLM65ライトブルー|116:RLM66ブラックグレー|117:RLM76ライトブルー|118:RLM78ライトブルー|119:RLM79サンドイエロー|120:RLM80オリーブグリーン|121:RLM81ブラウンバイオレット|122:RLM82ライトグリーン|123:RLM83ダークグリーン|124:暗緑色(三菱系)|125:カウリング色|126:コクピット色(三菱系)|127:コクピット色(中島系)|128:灰緑色|129:濃緑色(中島系)|130:濃緑色(川崎系)|131:赤褐色|132:土草色|135:ロシアングリーン(1)|136:ロシアングリーン(2)|137:タイヤブラック|138:クリアーグリーン|151:ホワイトパール|156:スーパーホワイト|158:スーパーイタリアンレッド|159:スーパーシルバー|171:蛍光レッド|172:蛍光イエロー|173:蛍光オレンジ|174:蛍光ピンク|175:蛍光グリーン|181:スーパークリアー半光沢|182:スーパークリアーつや消し|183:スーパークリアーグレートーン|188:フラットベース ラフ|189:フラットベース なめらか|301:グレーFS36081|302:グリーンFS34092|303:グリーンFS34102|304:オリーブドラブFS34087|305:グレーFS36118|306:グレーFS36270|307:グレーFS36320|308:グレーFS36375|309:グリーンFS34079|310:ブラウンFS30219|311:グレーFS36622|312:グリーンFS34227|313:イエローFS33531|314:ブルーFS35622|315:グレーFS16440|316:ホワイトFS17875|317:グレーFS36231|318:レドーム|319:薄松葉色|320:濃松葉色|321:黄土色|322:フタロシアニンブルー|323:ライトブルー|324:ライトグレー|325:グレーFS26440|326:ブルーFS15044|327:レッドFS11136|328:ブルーFS15050|329:イエローFS13538|330:ダークグリーンBS381C|331:ダークシーグレーBS381C|332:ライトエアクラフトグレー|333:エクストラダークシーグレー|334:バーリーグレー|335:ミディアムシーグレー|336:ヘンプ|337:グレイッシュブルー|338:ライトグレーFS36495|339:エンジングレーFS16081|340:フィールドグリーンFS34097|351:ジンククロメイト タイプⅠ|352:ジンククロメイト タイプⅡ|361:ダークグリーンBS381C/641|362:オーシャングレー|363:ミディアムシーグレー|364:エアクラフトグレーグリーン|365:グロスシーブルー|366:インターミディエイトブルー|367:ブルーグレー|368:スカイ|369:ダークアース|370:エイザーブルー|371:FS36440 ライトガルグレー|372:FS34079 ダークグリーン|373:FS36118 ミディアムガンシップグレー|374:シャロウオーシャンブルー|375:ディープオーシャンブルー|376:レドームグレー|381:暗緑色(川崎系)|382:暗緑色(中島系)|383:暗緑色(川西系)|384:コクピット色(川西系)|385:赤褐色(日本海軍)|391:機体内部色(ターコイズグリーン)|392:機体内部色|393:ロシアンエアクラフトブルー|394:エアクラフトグレー|395:ミディアムグリーン|511:ロシアングリーン4BO|512:ロシアングリーン4BO(退色)|513:ジャーマングレー|514:ジャーマングレー(退色)|515:ジャーマングレー(退色2)"
+            },
+            { 
+                brand: "GSIクレオス", series: "Mr.カラー GGX", type: "ラッカー", prefix: "LG", 
+                data: "1:GGXホワイト(光沢)|2:GGXブラック(光沢)|112:GGXクリアー UVカット光沢|113:GGXクリアー UVカットつや消し"
+            },
+            {
+                brand: "GSIクレオス", series: "Mr.カラー GX", type: "ラッカー", prefix: "GX",
+                data: "1:クールホワイト|2:ウイノーブラック|3:ハーマンレッド|4:キアロイエロー|5:スージーブルー|6:モウリーグリーン|100:スーパークリアーⅢ|114:スーパースムースクリアー|201:GXメタルブラック|202:GXメタルレッド|203:GXメタルイエロー|204:GXメタルブルー|205:GXメタルグリーン|206:GXメタルパープル|207:GXメタルバイオレット|208:GXラフシルバー|209:GXレッドゴールド|210:GXブルーゴールド|211:GXメタルピーチ|212:GXメタルブラッディレッド|213:GXホワイトシルバー|214:GXアイスシルバー|215:GXメタルブラス|216:GXメタルダークブルー|217:GXラフゴールド"
+            },
+            { 
+                brand: "GSIクレオス", series: "スーパーメタリック2", type: "ラッカー", prefix: "SM", 
+                data: "201:スーパーファインシルバー2|202:スーパーゴールド2|203:スーパーアイアン2|204:スーパーステンレス2|205:スーパーチタン2|206:スーパークロームシルバー2|207:スーパーリッチゴールド|208:スーパージュラルミン|209:スーパーカッパー|210:スーパーレッドゴールド|211:スーパーイエローゴールド|212:スーパーマットアルミ"
+            },
+            {
+                brand: "GSIクレオス", series: "水性ホビーカラー", type: "水性", prefix: "H", 
+                data: "1:ホワイト|2:ブラック|3:レッド|4:イエロー|5:ブルー|6:グリーン|7:ブラウン|8:シルバー|9:ゴールド|10:カッパー|11:つや消しホワイト|12:つや消しブラック|13:つや消しレッド|14:オレンジ|15:インディブルー|16:イエローグリーン|17:ココアブラウン|18:黒鉄色|19:ピンク|20:つや消しクリアー|21:グランプリホワイト|22:グレー|23:シャインレッド|24:オレンジイエロー|25:スカイブルー|26:デイトナグリーン|27:ライトブラウン|28:メタルブラック|29:サーモンピンク|30:クリアー|31:ホワイトグリーン|32:ダークグレー|33:あずき色|34:クリームイエロー|35:コバルトブルー|36:ダークグリーン|37:ウッドブラウン|38:赤鉄色|39:パープル|40:フラットベース|41:ペールグリーン|42:ブルーグレー|43:ワインレッド|44:薄茶色|45:みず色|46:エメラルドグリーン|47:レッドブラウン|48:オリーブグレー|49:すみれ色|50:よもぎ色|51:ガルグレー|52:オリーブドラブ(1)|53:ニュートラルグレー|54:ネイビーブルー|55:ミッドナイトブルー|56:ミディアムブルー|57:エアクラフトグレー|58:機体内部色|59:濃緑色(1)|60:濃緑色(2)|61:明灰白色(1)|62:明灰白色(2)|63:青竹色|64:RLM71ダークグリーン|65:RLM70ブラックグリーン|66:RLM79サンディブラウン|67:RLM65ライトブルー|68:RLM74グレーグリーン|69:RLM75グレーバイオレット|70:RLM02グレー|71:ミドルストーン|72:ダークアース|73:ダークグリーン(2)|74:スカイ|75:ダークシーグレー|76:焼鉄色|77:タイヤブラック|78:オリーブドラブ(2)|79:サンディイエロー|80:カーキグリーン|81:カーキ|82:軍艦色(1)|83:軍艦色(2)|84:マホガニー|85:セールカラー|86:モンザレッド|87:メタリックレッド|88:メタリックブルー|89:メタリックグリーン|90:クリアーレッド|91:クリアーイエロー|92:クリアーオレンジ|93:クリアーブルー|94:クリアーグリーン|95:スモークグレー|96:スモークブルー|97:蛍光イエロー|98:蛍光オレンジ|99:蛍光ピンク|100:蛍光グリーン|101:蛍光レッド|401:ダークグレー退色|402:グリーン退色|403:イエロー退色|404:レッド退色|405:オリーブドラブ退色|406:チョコレート退色"
+            },
+            {
+                brand: "GSIクレオス", series: "アクリジョン", type: "水性アクリル", prefix: "N",
+                data: "1:ホワイト|2:ブラック|3:レッド|4:イエロー|5:ブルー|6:グリーン|7:ブラウン|8:シルバー|9:ゴールド|10:カッパー|11:つや消しホワイト|12:つや消しブラック|13:つや消しレッド|14:オレンジ|15:インディブルー|16:イエローグリーン|17:ココアブラウン|18:黒鉄色|19:ピンク|20:つや消しクリアー|21:グランプリホワイト|22:ニュートラルグレー|23:シャインレッド|24:オレンジイエロー|25:スカイブルー|26:デイトナグリーン|27:ライトブラウン|28:メタルブラック|29:サーモンピンク|30:クリアー|31:クリアーレッド|32:クリアーオレンジ|33:クリアーイエロー|34:クリアーグリーン|35:クリアーブルー|36:蛍光レッド|37:蛍光オレンジ|38:蛍光イエロー|39:蛍光グリーン|40:蛍光ピンク|46:クリアーブラウン|47:クリアーパープル|48:クリアーブラック"
+            },
+            {
+                brand: "GSIクレオス", series: "Mr.メタルカラー", type: "ラッカー", prefix: "MC",
+                data: "211:クロームシルバー|212:アイアン|213:ステンレス|214:ダークアイアン|215:カッパー|216:ブロンズ|217:ゴールド|218:アルミ|219:ブラス"
+            },
+            {
+                brand: "GSIクレオス", series: "ウェザリングカラー", type: "エナメル系", prefix: "WC",
+                data: "01:マルチブラック|02:グランドブラウン|03:ステインブラウン|04:サンディウォッシュ|05:マルチホワイト|06:マルチグレー|07:グレイッシュブラウン|08:ラストオレンジ|09:シェイドブルー|10:スポットイエロー|11:フィルタリキッド フェイスグリーン|12:フィルタリキッド レイヤーバイオレット|13:フィルタリキッド スポットイエロー|14:フィルタリキッド シェードブルー"
+            },
+            {
+                brand: "GSIクレオス", series: "ガンダムカラー", type: "ラッカー", prefix: "UG",
+                data: "01:MSホワイト|02:MSブルー|03:MSイエロー|04:MSレッド|05:MSグレー連邦系|06:MSグリーン|07:MSディープグリーン|08:MSグレージオン系|09:MSジオン系緑|10:MSシャアレッド|11:MSシャアピンク|12:MSサザビーレッド|13:MSブルーZ系|14:MSライトブルー|15:MSファントムグレー|16:ティターンズブルー1|17:ティターンズブルー2|18:MSパープル|19:MSライトブルー2|20:MSライトグリーン|21:MSダークグリーン|22:MSファントムグレー|23:MSブルー|24:MSレッド|25:MSイエロー"
+            },
+            {
+                brand: "GSIクレオス", series: "LASCIVUS", type: "ラッカー", prefix: "CL",
+                data: "01:ホワイトピーチ|02:白雪色|03:クリアーペールレッド|04:クリアーペールブラウン|05:クリアーペールオレンジ|06:クリアーホワイト|07:ナッツホワイト|08:クリアーペールブラウン|09:ココアミルク"
+            },
+            // ----- TAMIYA -----
+            {
+                brand: "タミヤ", series: "アクリル塗料", type: "水性アクリル", prefix: "X-", 
+                data: "1:ブラック|2:ホワイト|3:ロイヤルブルー|4:ブルー|5:グリーン|6:オレンジ|7:レッド|8:レモンイエロー|9:ブラウン|10:ガンメタル|11:クロームシルバー|12:ゴールドリーフ|13:メタリックブルー|14:スカイブルー|15:ライトグリーン|16:パープル|17:ピンク|18:セミグロスブラック|19:スモーク|20:エナメル溶剤|20A:アクリル溶剤|21:フラットベース|22:クリヤー|23:クリヤーブルー|24:クリヤーイエロー|25:クリヤーグリーン|26:クリヤーオレンジ|27:クリヤーレッド|28:パークグリーン|31:チタンゴールド|32:チタンシルバー|33:ブロンズ|34:メタリックブラウン|35:セミグロスクリヤー"
+            },
+            {
+                brand: "タミヤ", series: "アクリル塗料", type: "水性アクリル", prefix: "XF-", 
+                data: "1:フラットブラック|2:フラットホワイト|3:フラットイエロー|4:イエローグリーン|5:フラットグリーン|6:コッパー|7:フラットレッド|8:フラットブルー|9:ハルレッド|10:フラットブラウン|11:暗緑色|12:明灰白色|13:濃緑色|14:明灰緑色|15:フラットフレッシュ|16:フラットアルミ|17:シーブルー|18:ミディアムブルー|19:スカイグレイ|20:ミディアムグレイ|21:スカイ|22:デッキタン|23:ライトブルー|24:ダークグレイ|25:ライトシーグレイ|26:ディープグリーン|27:ブラックグリーン|28:ダークコッパー|49:カーキ|50:フィールドブルー|51:カーキドラブ|52:フラットアース|53:ニュートラルグレイ|54:ダークシーグレイ|55:デッキタン|56:メタリックグレイ|57:バフ|58:オリーブグリーン|59:デザートイエロー|60:ダークイエロー|61:ダークグリーン|62:オリーブドラブ|63:ジャーマングレイ|64:レッドブラウン|65:フィールドグレイ|66:ライトグレイ|67:NATOグリーン|68:NATOブラウン|69:NATOブラック|70:暗緑色2|71:コックピット色|72:茶色|73:濃緑色|74:OD色|75:呉海軍工廠グレイ|76:灰緑色|77:佐世保海軍工廠グレイ|78:木甲板色|79:リノリウム甲板色|80:ロイヤルライトグレイ|81:オーシャングレイ2|82:オーシャングレイ|83:ミディアムシーグレイ2|84:ダークアイアン|85:ラバーブラック|86:フラットクリヤー|87:舞鶴海軍工廠グレイ|88:ダークイエロー2|89:ダークグリーン2|90:レッドブラウン2|91:横須賀海軍工廠グレイ|92:イエローブラウン|93:ライトブラウン"
+            },
+            {
+                brand: "タミヤ", series: "エナメル塗料", type: "エナメル", prefix: "X-", suffix: " (エナメル)", 
+                data: "1:ブラック|2:ホワイト|3:ロイヤルブルー|4:ブルー|5:グリーン|6:オレンジ|7:レッド|8:レモンイエロー|9:ブラウン|10:ガンメタル|11:クロームシルバー|12:ゴールドリーフ|13:メタリックブルー|14:スカイブルー|15:ライトグリーン|16:パープル|17:ピンク|18:セミグロスブラック|19:スモーク|21:フラットベース|22:クリヤー|23:クリヤーブルー|24:クリヤーイエロー|25:クリヤーグリーン|26:クリヤーオレンジ|27:クリヤーレッド|28:パークグリーン|31:チタンゴールド|32:チタンシルバー|33:ブロンズ|34:メタリックブラウン|35:セミグロスクリヤー"
+            },
+            {
+                brand: "タミヤ", series: "エナメル塗料", type: "エナメル", prefix: "XF-", suffix: " (エナメル)", 
+                data: "1:フラットブラック|2:フラットホワイト|3:フラットイエロー|4:イエローグリーン|5:フラットグリーン|6:コッパー|7:フラットレッド|8:フラットブルー|9:ハルレッド|10:フラットブラウン|11:暗緑色|12:明灰白色|13:濃緑色|14:明灰緑色|15:フラットフレッシュ|16:フラットアルミ|17:シーブルー|18:ミディアムブルー|19:スカイグレイ|20:ミディアムグレイ|21:スカイ|22:デッキタン|23:ライトブルー|24:ダークグレイ|25:ライトシーグレイ|26:ディープグリーン|27:ブラックグリーン|28:ダークコッパー|49:カーキ|50:フィールドブルー|51:カーキドラブ|52:フラットアース|53:ニュートラルグレイ|54:ダークシーグレイ|55:デッキタン|56:メタリックグレイ|57:バフ|58:オリーブグリーン|59:デザートイエロー|60:ダークイエロー|61:ダークグリーン|62:オリーブドラブ|63:ジャーマングレイ|64:レッドブラウン|65:フィールドグレイ|66:ライトグレイ|67:NATOグリーン|68:NATOブラウン|69:NATOブラック|70:暗緑色2|71:コックピット色|72:茶色|73:濃緑色|74:OD色|75:呉海軍工廠グレイ|76:灰緑色|77:佐世保海軍工廠グレイ|78:木甲板色|79:リノリウム甲板色|80:ロイヤルライトグレイ|81:オーシャングレイ2|82:オーシャングレイ|83:ミディアムシーグレイ2|84:ダークアイアン|85:ラバーブラック|86:フラットクリヤー|87:舞鶴海軍工廠グレイ|88:ダークイエロー2|89:ダークグリーン2|90:レッドブラウン2|91:横須賀海軍工廠グレイ|92:イエローブラウン|93:ライトブラウン"
+            },
+            {
+                brand: "タミヤ", series: "ラッカー塗料 (LP)", type: "ラッカー", prefix: "LP-", 
+                data: "1:ブラック|2:ホワイト|3:フラットブラック|4:フラットホワイト|5:セミグロスブラック|6:ピュアーブルー|7:ピュアーレッド|8:ピュアーイエロー|9:クリヤー|11:シルバー|12:呉海軍工廠グレイ|13:佐世保海軍工廠グレイ|14:舞鶴海軍工廠グレイ|15:横須賀海軍工廠グレイ|16:木甲板色|17:リノリウム甲板色|18:ダルレッド|19:ガンメタル|20:ライトガンメタル|21:イタリアンレッド|22:フラットベース|23:フラットクリヤー|24:セミグロスクリヤー|25:茶色|26:濃緑色|27:ジャーマングレイ|28:オリーブドラブ|29:オリーブドラブ2|30:ライトサンド|31:暗緑色2|32:明灰白色|33:灰緑色|34:ライトグレイ|35:インシグニアホワイト|36:ダークゴーストグレイ|37:ライトゴーストグレイ|38:フラットアルミ|39:レーシングホワイト|40:メタリックブラック|41:マイカブルー|42:マイカレッド|43:パールホワイト|44:メタリックオレンジ|45:レーシングブルー|46:ピュアーメタリックレッド|47:パールブルー|48:スパークリングシルバー|49:パールクリヤー|50:ブライトレッド|51:ピュアーオレンジ|52:クリヤーレッド|53:クリヤーオレンジ|54:ダークアイアン|55:ダークイエロー2|56:ダークグリーン2|57:レッドブラウン2|58:NATOグリーン|59:NATOブラウン|60:NATOブラック|61:メタリックグレイ|62:チタンゴールド|63:チタンシルバー|64:OD色|65:ラバーブラック|66:フラットフレッシュ|67:スモーク|68:クリヤーブルー|69:クリヤーイエロー|70:アルミシルバー|71:シャンパンゴールド|72:マイカシルバー|73:カーキ|74:フラットアース|75:バフ|76:イエローブラウン|77:ライトブラウン|78:フラットブルー|79:フラットレッド|80:フラットイエロー|81:調色用ブルー|82:調色用レッド|83:調色用イエロー|84:カモフラージュグレイ|85:ミディアムエアーグレイ"
+            },
+            {
+                brand: "タミヤ", series: "スプレー (TS)", type: "ラッカースプレー", prefix: "TS-", 
+                data: "1:レッドブラウン|2:ダークグリーン|3:ダークイエロー|4:ジャーマングレイ|5:オリーブドラブ|6:マットブラック|7:レーシングホワイト|8:イタリアンレッド|9:ブリティッシュグリーン|10:フレンチブルー|11:マルーン|12:オレンジ|13:クリヤー|14:ブラック|15:ブルー|16:イエロー|17:アルミシルバー|18:メタリックレッド|19:メタリックブルー|20:メタリックグリーン|21:ゴールド|22:ライトグリーン|23:ライトブルー|24:パープル|25:ピンク|26:ピュアーホワイト|27:マットホワイト|28:オリーブドラブ2|29:セミグロスブラック|30:シルバーリーフ|31:ブライトオレンジ|32:ヘイズグレイ|33:ダルレッド|34:キャメルイエロー|35:パークグリーン|36:蛍光レッド|37:ラベンダー|38:ガンメタル|39:マイカレッド|40:メタリックブラック|41:コーラルブルー|42:ライトガンメタル|43:レーシンググリーン|44:ブリリアントブルー|45:パールホワイト|46:ライトサンド|47:クロームイエロー|48:ガンシップグレイ|49:ブライトレッド|50:マイカブルー|51:レーシングブルー|52:キャンディーライムグリーン|53:ディープメタリックブルー|54:ライトメタリックブルー|55:ダークブルー|56:ブリリアントオレンジ|57:ブルーバイオレット|58:パールライトブルー|59:パールライトレッド|60:パールグリーン|61:NATOグリーン|62:NATOブラウン|63:NATOブラック|64:ダークマイカブルー|65:パールクリヤー|66:呉海軍工廠グレイ|67:佐世保海軍工廠グレイ|68:木甲板色|69:リノリウム甲板色|70:OD色|71:スモーク|72:クリヤーブルー|73:クリヤーオレンジ|74:クリヤーレッド|75:シャンパンゴールド|76:マイカシルバー|77:フラットフレッシュ|78:フィールドグレイ|79:セミグロスクリヤー|80:フラットクリヤー|81:ロイヤルライトグレイ|82:ラバーブラック|83:メタルシルバー|84:メタルゴールド|85:ブライトマイカレッド|86:ピュアーレッド|87:チタンゴールド|88:チタンシルバー|89:パールブルー|90:茶色|91:濃緑色|92:メタリックオレンジ|93:ピュアーブルー|94:メタリックグレイ|95:ピュアーメタリックレッド|96:蛍光オレンジ|97:パールイエロー|98:ピュアーオレンジ|99:舞鶴海軍工廠グレイ|100:ブライトガンメタル|101:ベースホワイト|102:コバルトグリーン"
+            },
+            // ----- GAIA NOTES -----
+            {
+                brand: "ガイアノーツ", series: "ガイアカラー", type: "ラッカー", prefix: "",
+                data: "001:ピュアホワイト|002:ピュアブラック|003:ブライトレッド|004:ウルトラブルー|005:サンシャインイエロー|006:フラットベース|007:クリアー|008:フラットクリアー|009:ブライトシルバー|010:ブライトゴールド|011:フラットホワイト|012:フラットブラック|013:ビリジアングリーン|014:ナチュラルブラウン|015:純色マゼンタ|016:純色シアン|017:純色イエロー|018:エメラルドグリーン|019:ラベンダー|020:ガンメタル|021:セミグロスホワイト|022:セミグロスブラック|023:スカーレット|024:コバルトブルー|025:橙黄色|026:ライトグリーン|027:ダークグリーン|028:ストーングリーン|029:ダークパープル|030:セミグロスクリアー|031:アルティメットホワイト|032:アルティメットブラック|033:純色ルビー|034:純色バイオレット|035:純色グリーン|036:純色パープル|037:純色ピンク|038:プライマリーメタリックレッド|039:プライマリーメタリックブルー|040:プライマリーメタリックイエロー|041:クリアーレッド|042:クリアーオレンジ|043:クリアーブラック|044:クリアーブルー|045:クリアーイエロー|046:クリアーブラウン|047:クリアーパープル|048:クリアーグリーン|049:クリアーピンク|050:クリアーホワイト|051:ノーツフレッシュ|052:ノーツフレッシュホワイト|053:ノーツフレッシュピンク|054:ノーツフレッシュオレンジ|059:サフレスピンク|060:サフレスオレンジ|061:ミッドナイトブルー|062:ミディアムブルー|063:ブルーグレー|071:ニュートラルグレーI|072:ニュートラルグレーII|073:ニュートラルグレーIII|074:ニュートラルグレーIV|075:ニュートラルグレーV|101:蛍光ブルー|102:蛍光ピンク|103:蛍光レッド|104:蛍光グリーン|105:蛍光イエロー|106:蛍光オレンジ|107:蛍光イエローグリーン|108:蛍光ブルーグリーン|121:スターブライトシルバー|122:スターブライトゴールド|123:スターブライトジュラルミン|124:スターブライトブラス|125:スターブライトアイアン|131:パールシルバー|132:パールゴールド|133:パールカッパー"
+            },
+            {
+                brand: "ガイアノーツ", series: "Ex-カラー", type: "ラッカー", prefix: "Ex-",
+                data: "01:Ex-ホワイト|02:Ex-ブラック|03:Ex-クリアー|04:Ex-フラットクリアー|05:Ex-フラットホワイト|06:Ex-フラットブラック|07:Ex-シルバー|08:Ex-ゴールド|09:Ex-セミグロスクリアー|10:Ex-フラットクリアープレミアム"
+            },
+            {
+                brand: "ガイアノーツ", series: "バーチャロンカラー", type: "ラッカー", prefix: "VO-",
+                data: "01:ウォームホワイト|02:アイスコバルトブルー|03:ビビッドオレンジ|04:フレームメタリック(1)|05:フレッシュ|06:ローズブライトレッド|07:マイルドウォームホワイト|08:マーズディープブルー|09:マーズダークブルー|10:マーズライトグレー|11:スノーダークブラウン|12:マイザーパープル|13:コーラルピンク|14:コーラルブラッシュ|15:フレームメタリック(2)|16:パールマーズライトグレー|17:パールマーズライトブルー|18:コーラルピンク(パール)|19:パールマーズダークブルー|20:ストロベリーレッド|21:スノーライトブラウン|22:マイザーピンク|23:マイザーパープル|24:マイザーダークブルー|25:マイザーライトブルー|26:朱|27:萌葱|28:風群青|29:ターコイズメタリック|30:ブライトロイヤルブルー|31:コールドホワイト|32:ターర్ణイズライトブルー|33:マイルドオレンジ|34:ブライトロイヤルブルー|39:風群青|41:ヴィクトリーゴールド|42:ヴィクトリーブラウンゴールド|43:レディッシュウォームホワイト"
+            },
+            {
+                brand: "ガイアノーツ", series: "NAZCA (ナスカ)", type: "ラッカー", prefix: "",
+                data: "NC-001:ミリオンブルー|NC-002:フロストマットブラック|NC-003:フレイムレッド|NC-004:ブルーフォグホワイト|NC-005:スチールホワイト|NC-006:コバルトバイオレット|NC-007:ジョイントグレー|NC-008:ニュートラルホワイト|NC-009:ダークネービーブルー|NC-010:マンダリンオレンジ|NC-011:スノーダークブラウン|NP-001:メカサフ ヘヴィ|NP-002:メカサフ ライト|NP-004:メカサフ スーパーヘヴィ|NP-005:メカサフ ピンク"
+            }
+        ];
+
+        // 啟動時自動解壓縮並合併至 masterPaintDB (Initialization Sequence)
+        compressedDB.forEach(group => {
+            const items = group.data.split('|');
+            items.forEach(item => {
+                const [num, name] = item.split(':');
+                const suffix = group.suffix || '';
+                const fullId = group.prefix + num;
+                
+                // 防呆：避免與預設帶有 ref 的塗料重複
+                if (!masterPaintDB.some(p => p.brand === group.brand && p.id === fullId)) {
+                    masterPaintDB.push({
+                        brand: group.brand,
+                        series: group.series,
+                        id: fullId,
+                        name: name + suffix,
+                        type: group.type,
+                        ref: "" 
+                    });
+                }
+            });
+        });
+
+        let myPaintInventory = [];
+        let myProjects = [];
+        let currentEditingProjectId = null; 
+
+        // 検索頻度（学習用統計データ）
+        let searchStats = {
+            project: { maker: {}, grade: {} },
+            inventory: { maker: {}, type: {} }
+        };
+
+        function loadData() {
+            try {
+                const savedInv = localStorage.getItem('myPaintInventoryV3');
+                if (savedInv) {
+                    myPaintInventory = JSON.parse(savedInv);
+                    // Data Migration 
+                    myPaintInventory.forEach(item => {
+                        const master = masterPaintDB.find(m => m.id === item.id && m.brand === item.brand && m.type === item.type);
+                        if (!item.type) item.type = master ? master.type : "その他";
+                        if (!item.series) item.series = master ? master.series : "";
+                        if (!item.ref) item.ref = master ? master.ref : "";
+                    });
+                } else {
+                    myPaintInventory = [];
+                }
+            } catch (e) { myPaintInventory = []; }
+
+            try {
+                const savedProj = localStorage.getItem('myProjectsV1');
+                if (savedProj) myProjects = JSON.parse(savedProj);
+            } catch (e) { myProjects = []; }
+
+            try {
+                const savedStats = localStorage.getItem('paintTrackerStatsV1');
+                if (savedStats) searchStats = JSON.parse(savedStats);
+            } catch (e) { console.warn('Stats loading failed'); }
+        }
+
+        function saveInventory() { localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory)); }
+        function saveProjects() { try { localStorage.setItem('myProjectsV1', JSON.stringify(myProjects)); } catch (e) { alert("データの保存に失敗しました。"); } }
+        function saveStats() { localStorage.setItem('paintTrackerStatsV1', JSON.stringify(searchStats)); }
+
+        // === 2. 検索頻度学習ロジック (Machine Learning Shortcut) ===
+        function trackSearch(context, category, value) {
+            if (!value || value === 'ALL') return;
+            if (!searchStats[context][category][value]) searchStats[context][category][value] = 0;
+            searchStats[context][category][value]++;
+            saveStats();
+            renderQuickFilters(context);
+        }
+
+        function renderQuickFilters(context) {
+            const containerId = context === 'project' ? 'projectQuickFilters' : 'invQuickFilters';
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            let topTermsPerCategory = [];
+            Object.keys(searchStats[context]).forEach(category => {
+                const terms = searchStats[context][category];
+                let categoryTerms = [];
+                Object.keys(terms).forEach(val => categoryTerms.push({ category, value: val, count: terms[val] }));
+                categoryTerms.sort((a, b) => b.count - a.count);
+                topTermsPerCategory = topTermsPerCategory.concat(categoryTerms.slice(0, 3));
+            });
+
+            if (topTermsPerCategory.length === 0) {
+                container.innerHTML = '<span class="text-gray-400 italic">まだ履歴がありません (無紀錄)</span>';
+                return;
+            }
+
+            topTermsPerCategory.forEach(term => {
+                const btn = document.createElement('button');
+                let prefix = '';
+                if(term.category === 'maker') prefix = '🏭 ';
+                else if(term.category === 'grade') prefix = '📏 ';
+                else if(term.category === 'type') prefix = '💧 ';
+
+                btn.className = 'bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold transition shadow-sm border border-blue-200';
+                btn.textContent = `${prefix}${term.value}`;
+                btn.onclick = () => window.applyQuickFilter(context, term.category, term.value);
+                container.appendChild(btn);
+            });
+        }
+
+        window.applyQuickFilter = function(context, category, value) {
+            if (context === 'project') {
+                const selectId = category === 'maker' ? 'filterMaker' : 'filterGrade';
+                document.getElementById(selectId).value = value;
+                renderProjectList();
+            } else if (context === 'inventory') {
+                const selectId = category === 'maker' ? 'invFilterMaker' : 'invFilterType';
+                document.getElementById(selectId).value = value;
+                renderInventoryList();
+            }
+        };
+
+        // === 3. Navigation ===
+        const navBtns = document.querySelectorAll('.nav-btn');
+        const viewSections = document.querySelectorAll('.view-section');
+
+        function switchView(targetId) {
+            navBtns.forEach(btn => {
+                if(btn.dataset.target === targetId) {
+                    btn.classList.add('text-blue-400', 'border-t-2', 'md:border-t-0', 'md:border-b-2', 'border-blue-400');
+                    btn.classList.remove('text-slate-300');
+                } else {
+                    btn.classList.remove('text-blue-400', 'border-t-2', 'md:border-t-0', 'md:border-b-2', 'border-blue-400');
+                    btn.classList.add('text-slate-300');
+                }
+            });
+            viewSections.forEach(view => {
+                if(view.id === targetId) view.classList.add(targetId === 'view-inventory' ? 'active-flex' : 'active');
+                else view.classList.remove('active', 'active-flex');
+            });
+            if(targetId === 'view-inventory') renderInventoryList();
+            if(targetId === 'view-projects') renderProjectList();
+            if(targetId === 'view-dashboard') renderDashboard();
+        }
+        navBtns.forEach(btn => btn.addEventListener('click', (e) => switchView(e.currentTarget.dataset.target)));
+
+        // === 4. Dashboard Logic ===
+        function renderDashboard() {
+            const ownedItems = myPaintInventory.filter(p => p.status === '所持' && p.qty > 0);
+            const totalQty = ownedItems.reduce((sum, item) => sum + item.qty, 0);
+            const totalKinds = ownedItems.length;
+            const wishlistItems = myPaintInventory.filter(p => p.status === '欲しい').length;
+
+            document.getElementById('statTotalQty').innerHTML = `${totalQty} <span class="text-base font-normal">本</span>`;
+            document.getElementById('statTotalKinds').innerHTML = `${totalKinds} <span class="text-base font-normal">種</span>`;
+            document.getElementById('statWishlist').innerHTML = `${wishlistItems} <span class="text-base font-normal">種</span>`;
+
+            const brandCounts = ownedItems.reduce((acc, item) => { acc[item.brand] = (acc[item.brand] || 0) + item.qty; return acc; }, {});
+            const container = document.getElementById('brandStatsContainer');
+            container.innerHTML = '';
+
+            if (totalQty === 0) { container.innerHTML = '<p class="text-sm text-gray-500 italic">データがありません。</p>'; return; }
+
+            Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).forEach(([brand, count]) => {
+                const percentage = Math.round((count / totalQty) * 100);
+                let barColor = 'bg-slate-500';
+                if(brand.includes('ガイア')) barColor = 'bg-green-500';
+                else if(brand.includes('GSI')) barColor = 'bg-blue-500';
+                else if(brand.includes('タミヤ')) barColor = 'bg-red-500';
+
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="mb-3">
+                        <div class="flex justify-between text-sm mb-1"><span class="font-bold text-gray-700">${brand}</span><span class="text-gray-500">${count}本 (${percentage}%)</span></div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5"><div class="${barColor} h-2.5 rounded-full" style="width: ${percentage}%"></div></div>
+                    </div>
+                `);
+            });
+        }
+
+        // === 5. Project Management Logic ===
+        const projectGrid = document.getElementById('projectGrid');
+        
+        function updateProjectFilterOptions() {
+            const filterMaker = document.getElementById('filterMaker');
+            const filterGrade = document.getElementById('filterGrade');
+            const currentMaker = filterMaker.value; const currentGrade = filterGrade.value;
+            const uniqueMakers = [...new Set(myProjects.map(p => p.maker))].filter(Boolean).sort();
+            const uniqueGrades = [...new Set(myProjects.map(p => p.grade))].filter(Boolean).sort();
+
+            filterMaker.innerHTML = '<option value="ALL">すべて (全部)</option>';
+            uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
+            filterGrade.innerHTML = '<option value="ALL">すべて (全部)</option>';
+            uniqueGrades.forEach(g => filterGrade.innerHTML += `<option value="${g}">${g}</option>`);
+
+            if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
+            if (uniqueGrades.includes(currentGrade)) filterGrade.value = currentGrade;
+        }
+
+        document.getElementById('filterMaker').addEventListener('change', (e) => { trackSearch('project', 'maker', e.target.value); renderProjectList(); });
+        document.getElementById('filterGrade').addEventListener('change', (e) => { trackSearch('project', 'grade', e.target.value); renderProjectList(); });
+        document.getElementById('filterName').addEventListener('input', renderProjectList);
+
+        function renderProjectList() {
+            updateProjectFilterOptions(); renderQuickFilters('project');
+            const makerFilterVal = document.getElementById('filterMaker').value;
+            const gradeFilterVal = document.getElementById('filterGrade').value;
+            const nameFilterVal = document.getElementById('filterName').value.toLowerCase();
+
+            projectGrid.innerHTML = '';
+            const filteredProjects = myProjects.filter(proj => {
+                return (makerFilterVal === 'ALL' || proj.maker === makerFilterVal) && 
+                       (gradeFilterVal === 'ALL' || proj.grade === gradeFilterVal) && 
+                       (!nameFilterVal || (proj.name && proj.name.toLowerCase().includes(nameFilterVal)));
+            });
+
+            if(filteredProjects.length === 0) { projectGrid.innerHTML = '<div class="col-span-full text-center py-10 text-gray-400">プロジェクトが見つかりません。</div>'; return; }
+
+            filteredProjects.forEach(proj => {
+                const dateStr = new Date(proj.updatedAt).toLocaleDateString('ja-JP');
+                const card = document.createElement('div');
+                card.className = 'bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition cursor-pointer flex flex-col';
+                card.innerHTML = `
+                    <div class="h-40 bg-gray-100 relative overflow-hidden flex items-center justify-center">
+                        ${proj.image ? `<img src="${proj.image}" class="object-cover w-full h-full opacity-90">` : `<span class="text-gray-400 text-sm">No Image</span>`}
+                        <div class="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">${proj.markers ? proj.markers.length : 0} 色</div>
+                    </div>
+                    <div class="p-4 flex-grow">
+                        <div class="flex justify-between items-start mb-2"><div><span class="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded mr-1">${proj.maker}</span><span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded">${proj.grade}</span></div></div>
+                        <h3 class="font-bold text-gray-800 text-lg mb-1 truncate">${proj.name || '名称未設定'}</h3>
+                        <p class="text-xs text-gray-400">更新: ${dateStr}</p>
+                    </div>
+                    <div class="bg-gray-50 p-3 border-t border-gray-100 flex justify-end space-x-2"><button class="text-red-500 hover:bg-red-50 p-1.5 rounded transition" onclick="deleteProject('${proj.id}', event)" title="刪除"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button></div>
+                `;
+                card.addEventListener('click', (e) => { if(!e.target.closest('button')) loadProjectToEditor(proj.id); });
+                projectGrid.appendChild(card);
+            });
+        }
+
+        // === 6. Editor Logic ===
+        document.getElementById('createNewProjectBtn').addEventListener('click', () => {
+            currentEditingProjectId = generateUid();
+            document.getElementById('maker').selectedIndex = 0; document.getElementById('grade').selectedIndex = 0;
+            document.getElementById('customMaker').value = ''; document.getElementById('customMaker').classList.add('hidden');
+            document.getElementById('customGrade').value = ''; document.getElementById('customGrade').classList.add('hidden');
+            document.getElementById('projectName').value = ''; document.getElementById('imageLoader').value = '';
+            uploadedImage = new Image(); markers = [];
+            document.getElementById('paintCanvas').classList.add('hidden'); document.getElementById('placeholderText').classList.remove('hidden');
+            document.getElementById('canvasContainer').classList.add('p-6'); document.getElementById('downloadBtn').classList.add('hidden');
+            updateProjectBomList(); switchView('view-project-edit');
+        });
+        document.getElementById('backToProjectsBtn').addEventListener('click', () => switchView('view-projects'));
+        document.getElementById('maker').addEventListener('change', function(e) { document.getElementById('customMaker').classList.toggle('hidden', e.target.value !== 'その他'); });
+        document.getElementById('grade').addEventListener('change', function(e) { document.getElementById('customGrade').classList.toggle('hidden', e.target.value !== 'その他'); });
+
+        document.getElementById('saveProjectBtn').addEventListener('click', () => {
+            if(!currentEditingProjectId) return;
+            let compressedImage = null;
+            if(uploadedImage.src && uploadedImage.src.startsWith('data:')) {
+                const offCanvas = document.createElement('canvas'); const offCtx = offCanvas.getContext('2d');
+                let w = uploadedImage.width; let h = uploadedImage.height;
+                if(w > 800) { h = Math.round(h * (800 / w)); w = 800; }
+                offCanvas.width = w; offCanvas.height = h; offCtx.drawImage(uploadedImage, 0, 0, w, h);
+                compressedImage = offCanvas.toDataURL('image/jpeg', 0.6); 
+            }
+            let finalMaker = document.getElementById('maker').value; if (finalMaker === 'その他') finalMaker = document.getElementById('customMaker').value.trim() || 'その他';
+            let finalGrade = document.getElementById('grade').value; if (finalGrade === 'その他') finalGrade = document.getElementById('customGrade').value.trim() || 'その他';
+
+            const projData = { id: currentEditingProjectId, maker: finalMaker, grade: finalGrade, name: document.getElementById('projectName').value.trim(), image: compressedImage, markers: JSON.parse(JSON.stringify(markers)), updatedAt: Date.now() };
+            const idx = myProjects.findIndex(p => p.id === currentEditingProjectId);
+            if(idx >= 0) { myProjects[idx] = projData; } else { myProjects.unshift(projData); }
+            saveProjects(); alert('プロジェクトを保存しました。'); renderProjectList(); switchView('view-projects');
+        });
+
+        function loadProjectToEditor(id) {
+            const proj = myProjects.find(p => p.id === id); if(!proj) return;
+            currentEditingProjectId = proj.id;
+            const makerSelect = document.getElementById('maker'); const customMaker = document.getElementById('customMaker');
+            if (Array.from(makerSelect.options).some(opt => opt.value === proj.maker)) { makerSelect.value = proj.maker; customMaker.classList.add('hidden'); } 
+            else { makerSelect.value = 'その他'; customMaker.value = proj.maker || ''; customMaker.classList.remove('hidden'); }
+
+            const gradeSelect = document.getElementById('grade'); const customGrade = document.getElementById('customGrade');
+            if (Array.from(gradeSelect.options).some(opt => opt.value === proj.grade)) { gradeSelect.value = proj.grade; customGrade.classList.add('hidden'); } 
+            else { gradeSelect.value = 'その他'; customGrade.value = proj.grade || ''; customGrade.classList.remove('hidden'); }
+
+            document.getElementById('projectName').value = proj.name || '';
+            markers = proj.markers ? JSON.parse(JSON.stringify(proj.markers)) : [];
+            
+            if(proj.image) {
+                uploadedImage = new Image();
+                uploadedImage.onload = () => {
+                    const canvas = document.getElementById('paintCanvas');
+                    canvas.width = uploadedImage.width; canvas.height = uploadedImage.height;
+                    canvas.classList.remove('hidden'); document.getElementById('placeholderText').classList.add('hidden');
+                    document.getElementById('canvasContainer').classList.remove('p-6'); document.getElementById('downloadBtn').classList.remove('hidden');
+                    drawCanvas(); updateProjectBomList();
+                };
+                uploadedImage.src = proj.image;
+            } else {
+                uploadedImage = new Image();
+                document.getElementById('paintCanvas').classList.add('hidden'); document.getElementById('placeholderText').classList.remove('hidden'); document.getElementById('downloadBtn').classList.add('hidden');
+                updateProjectBomList();
+            }
+            switchView('view-project-edit');
+        }
+        window.deleteProject = function(id, event) { event.stopPropagation(); if(confirm('このプロジェクトを削除しますか？')) { myProjects = myProjects.filter(p => p.id !== id); saveProjects(); renderProjectList(); } }
+
+        // --- Editor Canvas Handling ---
+        const canvas = document.getElementById('paintCanvas'); const ctx = canvas.getContext('2d');
+        const paintModal = document.getElementById('paintModal'); const paintInput = document.getElementById('paintInput');
+        const autocompleteList = document.getElementById('autocompleteList'); const paintListUI = document.getElementById('paintList');
+
+        let tempCoord = null; let isDragging = false; let dragIndex = -1; let dragOffsetX = 0; let dragOffsetY = 0; let mouseDownPos = {x: 0, y: 0};
+
+        document.getElementById('imageLoader').addEventListener('change', function(e) {
+            const file = e.target.files[0]; if (!file) return; const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedImage.onload = function() {
+                    canvas.width = uploadedImage.width; canvas.height = uploadedImage.height;
+                    canvas.classList.remove('hidden'); document.getElementById('downloadBtn').classList.remove('hidden');
+                    document.getElementById('placeholderText').classList.add('hidden'); document.getElementById('canvasContainer').classList.remove('p-6');
+                    markers = []; updateProjectBomList(); drawCanvas();
+                }
+                uploadedImage.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
+            let clientX = e.clientX; let clientY = e.clientY;
+            if (e.touches && e.touches.length > 0) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY, clientX: clientX, clientY: clientY };
+        }
+
+        function handlePointerDown(e) {
+            const pos = getMousePos(e); mouseDownPos = { x: pos.x, y: pos.y };
+            for (let i = markers.length - 1; i >= 0; i--) {
+                const box = markers[i].hitBox;
+                if (box && pos.x >= box.x && pos.x <= box.x + box.w && pos.y >= box.y && pos.y <= box.y + box.h) {
+                    isDragging = true; dragIndex = i; dragOffsetX = pos.x - markers[i].labelX; dragOffsetY = pos.y - markers[i].labelY;
+                    canvas.style.cursor = 'grabbing'; e.preventDefault(); return; 
+                }
+            }
+        }
+        function handlePointerMove(e) { if (isDragging && dragIndex !== -1) { const pos = getMousePos(e); markers[dragIndex].labelX = pos.x - dragOffsetX; markers[dragIndex].labelY = pos.y - dragOffsetY; drawCanvas(); e.preventDefault(); } }
+        function handlePointerUp(e) {
+            let pos = mouseDownPos; 
+            if(e.changedTouches && e.changedTouches.length > 0) {
+                const rect = canvas.getBoundingClientRect(); const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
+                pos = { x: (e.changedTouches[0].clientX - rect.left) * scaleX, y: (e.changedTouches[0].clientY - rect.top) * scaleY, clientX: e.changedTouches[0].clientX, clientY: e.changedTouches[0].clientY };
+            } else if (e.clientX) { pos = getMousePos(e); }
+
+            if (isDragging) { isDragging = false; dragIndex = -1; canvas.style.cursor = 'crosshair'; return; }
+            const dist = Math.sqrt(Math.pow(pos.x - mouseDownPos.x, 2) + Math.pow(pos.y - mouseDownPos.y, 2));
+            if (dist < 10 && !paintModal.classList.contains('hidden') === false) {
+                tempCoord = { x: pos.x, y: pos.y };
+                const containerRect = document.getElementById('canvasContainer').getBoundingClientRect();
+                const modalX = Math.min(pos.clientX - containerRect.left + 10, containerRect.width - 300);
+                const modalY = Math.min(pos.clientY - containerRect.top + 10, containerRect.height - 120);
+                paintModal.style.left = `${Math.max(0, modalX)}px`; paintModal.style.top = `${Math.max(0, modalY)}px`;
+                paintModal.classList.remove('hidden'); paintInput.value = ''; autocompleteList.classList.add('hidden'); paintInput.focus();
+            }
+        }
+
+        canvas.addEventListener('mousedown', handlePointerDown); canvas.addEventListener('mousemove', handlePointerMove); canvas.addEventListener('mouseup', handlePointerUp);
+        canvas.addEventListener('mouseleave', () => { if(isDragging) { isDragging=false; dragIndex=-1; canvas.style.cursor='crosshair'; } });
+        canvas.addEventListener('touchstart', handlePointerDown, {passive: false}); canvas.addEventListener('touchmove', handlePointerMove, {passive: false}); canvas.addEventListener('touchend', handlePointerUp);
+
+        paintInput.addEventListener('input', function() {
+            const keyword = this.value.trim().toLowerCase(); autocompleteList.innerHTML = '';
+            if (!keyword) { autocompleteList.classList.add('hidden'); return; }
+            
+            const normalizedKeyword = keyword.replace(/[-\s]/g, '');
+            const availableInventory = myPaintInventory.filter(p => p.status === '所持');
+            
+            const matches = availableInventory.filter(p => {
+                const normId = p.id.toLowerCase().replace(/[-\s]/g, '');
+                const normName = p.name.toLowerCase().replace(/[-\s]/g, '');
+                const normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
+                return normId.includes(normalizedKeyword) || normName.includes(normalizedKeyword) || normBrand.includes(normalizedKeyword);
+            });
+
+            matches.sort((a, b) => {
+                const aId = a.id.toLowerCase().replace(/[-\s]/g, ''); const bId = b.id.toLowerCase().replace(/[-\s]/g, '');
+                if (aId === normalizedKeyword) return -1; if (bId === normalizedKeyword) return 1;
+                if (aId.startsWith(normalizedKeyword) && !bId.startsWith(normalizedKeyword)) return -1;
+                if (!aId.startsWith(normalizedKeyword) && bId.startsWith(normalizedKeyword)) return 1;
+                return 0;
+            });
+
+            if (matches.length > 0) {
+                autocompleteList.classList.remove('hidden');
+                matches.forEach(match => {
+                    const li = document.createElement('li'); li.className = 'p-2 hover:bg-blue-50 cursor-pointer text-sm border-b border-gray-100 last:border-0 text-gray-700';
+                    const qtyColor = match.qty > 0 ? 'text-green-600' : 'text-red-500';
+                    let refHtml = match.ref ? `<div class="text-[10px] text-gray-400 truncate mt-0.5">参考: ${match.ref}</div>` : '';
+                    li.innerHTML = `<div class="flex justify-between items-center"><span class="font-bold">${match.name}</span><div class="flex items-center text-xs"><span class="${qtyColor} font-bold mr-2">在庫:${match.qty}</span><span class="text-slate-400">${match.brand}</span></div></div>${refHtml}`;
+                    li.addEventListener('click', () => {
+                        if(match.qty <= 0) alert("警告：この塗料は現在在庫が「0」です。");
+                        paintInput.value = match.name; autocompleteList.classList.add('hidden');
+                    });
+                    autocompleteList.appendChild(li);
+                });
+            } else { autocompleteList.classList.add('hidden'); }
+        });
+
+        document.getElementById('cancelPaint').addEventListener('click', () => { paintModal.classList.add('hidden'); autocompleteList.classList.add('hidden'); tempCoord = null; });
+        document.getElementById('savePaint').addEventListener('click', () => {
+            const paintName = paintInput.value.trim();
+            if (paintName && tempCoord) {
+                const isLeftHalf = tempCoord.x < canvas.width / 2; const defaultLabelX = isLeftHalf ? 50 : canvas.width - 250; const defaultLabelY = tempCoord.y - 20;
+                const matchedPaint = myPaintInventory.find(p => p.name === paintName); const brandName = matchedPaint ? matchedPaint.brand : 'その他';
+                markers.push({ x: tempCoord.x, y: tempCoord.y, name: paintName, brand: brandName, labelX: defaultLabelX, labelY: defaultLabelY, hitBox: null });
+                drawCanvas(); updateProjectBomList();
+            }
+            paintModal.classList.add('hidden'); autocompleteList.classList.add('hidden'); tempCoord = null;
+        });
+
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); if(uploadedImage.src) ctx.drawImage(uploadedImage, 0, 0, canvas.width, canvas.height);
+            markers.forEach((marker, index) => {
+                const { x, y, name, labelX, labelY } = marker;
+                ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.fillStyle = '#ef4444'; ctx.fill(); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.font = 'bold 24px sans-serif'; const textStr = `${index + 1}. ${name}`; const textWidth = ctx.measureText(textStr).width; const boxWidth = textWidth + 20; const boxHeight = 40;
+                marker.hitBox = { x: labelX, y: labelY, w: boxWidth, h: boxHeight };
+                ctx.beginPath(); ctx.moveTo(x, y); const labelCenterX = labelX + boxWidth / 2; const labelCenterY = labelY + boxHeight / 2; const midX = x + (labelCenterX - x) * 0.5; const midY = y - 20; 
+                ctx.lineTo(midX, midY); ctx.lineTo(labelCenterX, labelCenterY);
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)'; ctx.lineWidth = 4; ctx.stroke(); ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2; ctx.stroke(); 
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; ctx.beginPath(); ctx.roundRect(labelX, labelY, boxWidth, boxHeight, 5); ctx.fill();
+                ctx.fillStyle = '#ffffff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(textStr, labelX + 10, labelY + boxHeight / 2);
+            });
+        }
+
+        function updateProjectBomList() {
+            paintListUI.innerHTML = '';
+            if (markers.length === 0) { paintListUI.innerHTML = '<p class="text-sm text-gray-500 italic">まだ塗料が登録されていません。</p>'; return; }
+            const groupedMarkers = markers.reduce((acc, marker, originalIndex) => {
+                const brand = marker.brand || 'その他'; if (!acc[brand]) acc[brand] = []; acc[brand].push({ ...marker, displayIndex: originalIndex + 1 }); return acc;
+            }, {});
+            Object.keys(groupedMarkers).sort().forEach(brand => {
+                const brandHeader = document.createElement('h3'); brandHeader.className = 'font-bold text-sm text-slate-700 mt-4 mb-2 bg-slate-200 px-3 py-1 rounded-md inline-block'; brandHeader.textContent = `■ ${brand}`; paintListUI.appendChild(brandHeader);
+                const ul = document.createElement('ul'); ul.className = 'space-y-2 ml-2';
+                groupedMarkers[brand].forEach(marker => {
+                    const li = document.createElement('li'); li.className = 'flex items-center p-2 bg-white border border-gray-200 rounded shadow-sm';
+                    li.innerHTML = `<span class="flex-shrink-0 w-7 h-7 flex items-center justify-center bg-red-100 text-red-600 font-bold rounded-full mr-3 border border-red-200 text-sm">${marker.displayIndex}</span><div class="flex-grow"><span class="font-semibold text-gray-800 text-sm">${marker.name}</span></div>`;
+                    ul.appendChild(li);
+                });
+                paintListUI.appendChild(ul);
+            });
+        }
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            if (markers.length === 0 && !uploadedImage.src) return;
+            const link = document.createElement('a'); link.download = `${document.getElementById('projectName').value.trim() || 'project'}_blueprint.png`; link.href = canvas.toDataURL('image/png'); link.click();
+        });
+
+        // === 7. Inventory Logic (在庫管理 + MasterDB Search) ===
+        let currentTabStatus = '所持';
+        const inventoryListUI = document.getElementById('inventoryListUI');
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold'); b.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50'); });
+                const target = e.currentTarget; target.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50'); target.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold');
+                currentTabStatus = target.getAttribute('data-status');
+                renderInventoryList();
+            });
+        });
+
+        function updateInvFilterOptions() {
+            const filterMaker = document.getElementById('invFilterMaker');
+            const filterType = document.getElementById('invFilterType');
+            const currentMaker = filterMaker.value; const currentType = filterType.value;
+            const uniqueMakers = [...new Set(myPaintInventory.map(p => p.brand))].filter(Boolean).sort();
+            const uniqueTypes = [...new Set(myPaintInventory.map(p => p.type))].filter(Boolean).sort();
+
+            filterMaker.innerHTML = '<option value="ALL">メーカー: すべて (廠商)</option>'; uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
+            filterType.innerHTML = '<option value="ALL">種類: すべて (塗料類型)</option>'; uniqueTypes.forEach(t => filterType.innerHTML += `<option value="${t}">${t}</option>`);
+
+            if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
+            if (uniqueTypes.includes(currentType)) filterType.value = currentType;
+        }
+
+        document.getElementById('invFilterMaker').addEventListener('change', (e) => { trackSearch('inventory', 'maker', e.target.value); renderInventoryList(); });
+        document.getElementById('invFilterType').addEventListener('change', (e) => { trackSearch('inventory', 'type', e.target.value); renderInventoryList(); });
+
+        const masterSearchInput = document.getElementById('masterSearchInput');
+        const masterAutocompleteList = document.getElementById('masterAutocompleteList');
+        
+        masterSearchInput.addEventListener('input', function() {
+            const keyword = this.value.trim().toLowerCase(); masterAutocompleteList.innerHTML = '';
+            if (!keyword) { masterAutocompleteList.classList.add('hidden'); return; }
+            
+            const normalizedKeyword = keyword.replace(/[-\s]/g, '');
+
+            const matches = masterPaintDB.filter(p => {
+                const normId = p.id.toLowerCase().replace(/[-\s]/g, '');
+                const normName = p.name.toLowerCase().replace(/[-\s]/g, '');
+                const normBrand = p.brand.toLowerCase().replace(/[-\s]/g, '');
+                return normId.includes(normalizedKeyword) || normName.includes(normalizedKeyword) || normBrand.includes(normalizedKeyword);
+            });
+
+            matches.sort((a, b) => {
+                const aId = a.id.toLowerCase().replace(/[-\s]/g, ''); const bId = b.id.toLowerCase().replace(/[-\s]/g, '');
+                if (aId === normalizedKeyword) return -1; if (bId === normalizedKeyword) return 1;
+                if (aId.startsWith(normalizedKeyword) && !bId.startsWith(normalizedKeyword)) return -1;
+                if (!aId.startsWith(normalizedKeyword) && bId.startsWith(normalizedKeyword)) return 1;
+                return 0;
+            });
+
+            if (matches.length > 0) {
+                masterAutocompleteList.classList.remove('hidden');
+                // 限制顯示筆數以優化效能 (防呆)
+                const displayMatches = matches.slice(0, 50); 
+                displayMatches.forEach(match => {
+                    const li = document.createElement('li'); li.className = 'p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0 flex justify-between items-center';
+                    let refHtml = match.ref ? `<span class="text-[10px] text-indigo-500 mt-1 flex items-center"><svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${match.ref}</span>` : '';
+                    
+                    li.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="font-bold text-gray-800 text-sm">${match.id} ${match.name}</span>
+                            <span class="text-xs text-slate-500">${match.brand} / ${match.series} / ${match.type}</span>
+                            ${refHtml}
+                        </div>
+                        <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-bold">追加 +</span>
+                    `;
+                    li.addEventListener('click', () => {
+                        let targetStatus = (currentTabStatus === '欲しい') ? '欲しい' : '所持'; let targetFav = (currentTabStatus === 'お気に入り');
+                        const existing = myPaintInventory.find(p => p.id === match.id && p.brand === match.brand && p.series === match.series);
+                        if (existing) {
+                            if (targetStatus === '所持') { existing.qty += 1; existing.status = '所持'; } 
+                            else if (targetStatus === '欲しい' && existing.status !== '所持') { existing.qty += 1; }
+                            if (targetFav) existing.isFavorite = true;
+                        } else {
+                            myPaintInventory.unshift({ 
+                                uid: generateUid(), brand: match.brand, id: match.id, 
+                                name: `${match.brand.substring(0,3)} ${match.id} ${match.name}`, 
+                                status: targetStatus, qty: targetStatus === '所持' ? 1 : 0, 
+                                isFavorite: targetFav, type: match.type || 'その他',
+                                series: match.series || '', ref: match.ref || ''
+                            });
+                        }
+                        saveInventory(); masterSearchInput.value = ''; masterAutocompleteList.classList.add('hidden');
+                        renderInventoryList();
+                    });
+                    masterAutocompleteList.appendChild(li);
+                });
+            } else { masterAutocompleteList.classList.remove('hidden'); masterAutocompleteList.innerHTML = '<li class="p-3 text-sm text-gray-500 text-center italic">見つかりません。未登録の塗料です。</li>'; }
+        });
+
+        function renderInventoryList() {
+            updateInvFilterOptions(); renderQuickFilters('inventory');
+            const makerFilterVal = document.getElementById('invFilterMaker').value;
+            const typeFilterVal = document.getElementById('invFilterType').value;
+
+            inventoryListUI.innerHTML = '';
+            let filteredInventory = currentTabStatus === 'お気に入り' ? myPaintInventory.filter(item => item.isFavorite) : myPaintInventory.filter(item => item.status === currentTabStatus);
+
+            filteredInventory = filteredInventory.filter(item => {
+                return (makerFilterVal === 'ALL' || item.brand === makerFilterVal) && (typeFilterVal === 'ALL' || item.type === typeFilterVal);
+            });
+
+            filteredInventory.sort((a, b) => a.brand.localeCompare(b.brand));
+            if(filteredInventory.length === 0) { inventoryListUI.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">該当する塗料がありません。</div>`; return; }
+
+            filteredInventory.forEach(item => {
+                const li = document.createElement('li'); li.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex flex-col justify-between';
+                let brandColor = 'bg-slate-200 text-slate-700';
+                if(item.brand.includes('ガイア')) brandColor = 'bg-green-100 text-green-700';
+                else if(item.brand.includes('GSI')) brandColor = 'bg-blue-100 text-blue-700';
+                else if(item.brand.includes('タミヤ')) brandColor = 'bg-red-100 text-red-700';
+
+                const heartColor = item.isFavorite ? 'text-red-500' : 'text-gray-300 hover:text-red-400';
+                const heartFill = item.isFavorite ? 'currentColor' : 'none';
+                let purchaseBtnHtml = '';
+                if (item.status === '欲しい' && item.qty > 0) {
+                    purchaseBtnHtml = `<div class="mt-3 pt-2 border-t border-gray-100 flex justify-end"><button onclick="purchaseItem('${item.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition flex items-center"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>購入 (入庫する)</button></div>`;
+                }
+
+                let refHtml = item.ref ? `<div class="text-[10px] text-indigo-500 mt-1">参考: ${item.ref}</div>` : '';
+
+                li.innerHTML = `
+                    <div class="flex flex-col md:flex-row md:items-center justify-between">
+                        <div class="mb-2 md:mb-0">
+                            <div class="flex items-center mb-1">
+                                <span class="inline-block px-2 py-0.5 ${brandColor} text-[10px] font-bold rounded mr-2">${item.brand}</span>
+                                <span class="text-[10px] bg-yellow-100 text-yellow-800 font-bold px-2 py-0.5 rounded mr-2 border border-yellow-200">${item.type || 'その他'}</span>
+                                ${item.series ? `<span class="text-[10px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded mr-2">${item.series}</span>` : ''}
+                                <span class="text-xs font-mono bg-gray-100 px-1 rounded text-gray-600">${item.id}</span>
+                            </div>
+                            <div class="font-bold text-gray-800 text-sm">${item.name}</div>
+                            ${refHtml}
+                        </div>
+                        <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-3 bg-gray-50 p-1.5 rounded border border-gray-100 mt-2 md:mt-0">
+                            <button onclick="toggleFavorite('${item.uid}')" class="${heartColor} p-1 transition" title="お気に入り"><svg class="w-6 h-6" fill="${heartFill}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></button>
+                            <select onchange="updateItemStatus('${item.uid}', this.value)" class="text-xs border border-gray-300 rounded p-1 bg-white outline-none focus:ring-1 focus:ring-blue-500"><option value="所持" ${item.status === '所持' ? 'selected' : ''}>所持</option><option value="欲しい" ${item.status === '欲しい' ? 'selected' : ''}>欲しい</option></select>
+                            <div class="flex items-center border border-gray-300 rounded bg-white h-8"><button onclick="updateItemQty('${item.uid}', -1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-red-500 transition h-full font-bold">-</button><input type="number" readonly value="${item.qty}" class="w-8 text-center text-sm font-bold text-gray-700 border-x border-gray-200 h-full outline-none bg-transparent"><button onclick="updateItemQty('${item.uid}', 1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-blue-500 transition h-full font-bold">+</button></div>
+                            <button onclick="removeItem('${item.uid}')" class="text-red-400 hover:text-red-600 p-1 transition" title="刪除"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        </div>
+                    </div>
+                    ${purchaseBtnHtml}
+                `;
+                inventoryListUI.appendChild(li);
+            });
+        }
+
+        window.updateItemStatus = (uid, newStatus) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.status = newStatus; saveInventory(); renderInventoryList(); } }
+        window.updateItemQty = (uid, delta) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.qty += delta; if(item.qty < 0) item.qty = 0; saveInventory(); renderInventoryList(); } }
+        window.removeItem = (uid) => { if(confirm('本当に削除しますか？')) { myPaintInventory = myPaintInventory.filter(p => p.uid !== uid); saveInventory(); renderInventoryList(); } }
+        window.toggleFavorite = (uid) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.isFavorite = !item.isFavorite; saveInventory(); renderInventoryList(); } }
+        window.purchaseItem = (uid) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.status = '所持'; if(item.qty <= 0) item.qty = 1; saveInventory(); renderInventoryList(); } }
+
+        // === 8. Settings Logic ===
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const data = { inventory: myPaintInventory, projects: myProjects, stats: searchStats };
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'paint_tracker_backup.json'; a.click(); URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('importFile').addEventListener('change', (e) => {
+            const file = e.target.files[0]; if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    if(data.inventory) myPaintInventory = data.inventory;
+                    if(data.projects) myProjects = data.projects;
+                    if(data.stats) searchStats = data.stats;
+                    saveInventory(); saveProjects(); saveStats();
+                    alert('データのインポートが完了しました。'); location.reload();
+                } catch(err) { alert('ファイルの形式が正しくありません。'); }
+            };
+            reader.readAsText(file);
+        });
+
+        document.getElementById('resetProjectsBtn').addEventListener('click', () => { if(confirm('本当にすべてのプロジェクトを削除しますか？')) { myProjects = []; saveProjects(); renderProjectList(); alert('消去しました。'); } });
+        document.getElementById('resetInventoryBtn').addEventListener('click', () => { if(confirm('本当に在庫データを全消去しますか？')) { myPaintInventory = []; saveInventory(); renderInventoryList(); alert('消去しました。'); } });
+
+        // Initialize App
+        loadData();
+        renderProjectList();
+        renderInventoryList();
+        switchView('view-projects');
+
+    </script>
+</body>
+</html>
