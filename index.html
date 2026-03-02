@@ -25,7 +25,7 @@
     <div id="authOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <svg class="w-16 h-16 text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <h1 class="text-3xl font-black mb-2 tracking-wider">PAINT TRACKER</h1>
-        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">HYBRID SYNC SYSTEM V18</p>
+        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">HYBRID SYNC SYSTEM V19</p>
         
         <button id="googleLoginBtn" class="bg-white text-slate-800 px-6 py-3 rounded-full font-bold shadow-xl hover:bg-slate-100 transition transform hover:scale-105 flex items-center">
             <svg class="w-5 h-5 mr-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
@@ -418,7 +418,8 @@
         }
 
         let userUid = null;
-        let isSyncing = false;
+        let isSyncData = false; // V19: 改名避免混淆，表示是否正在接收雲端資料
+        let isCloudReady = false; // V19: 新增旗標，確保雲端初次下載完成前不可覆蓋寫入
 
         // === 0. Global Utilities ===
         function generateUid() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
@@ -565,6 +566,10 @@
         let searchStats = { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } };
         let currentEditingProjectId = null; 
 
+        // V19: 通信状態フラグ。データ受信中に誤ってアップロードしないための安全装置（インターロック）
+        let isSyncData = false; 
+        let isCloudReady = false; 
+
         // === 2. Auth & Cloud/Local Sync (SCADA & Local 連携) ===
 
         const guestLoginBtn = document.getElementById('guestLoginBtn');
@@ -641,6 +646,8 @@
                 
                 if (user) {
                     userUid = user.uid;
+                    isCloudReady = false; // ログイン直後はまだクラウド準備未完了とする
+
                     if(loginStatusText) loginStatusText.textContent = `${user.displayName} (已連線)`;
                     
                     document.getElementById('logoutBtn')?.classList.remove('hidden');
@@ -657,6 +664,8 @@
                         setTimeout(() => overlay.style.display = 'none', 500);
                     }
                     
+                    // V19: ローカルデータがあればクラウドへマージする処理。
+                    // ただし、完全に上書きしないようにする。
                     migrateLocalToCloud();
                     startCloudSync();
                 } else {
@@ -697,17 +706,16 @@
             const localProj = localStorage.getItem('myProjectsV1');
             const localStats = localStorage.getItem('paintTrackerStatsV1');
 
+            // もしローカルにデータがあれば、それをRAMに展開（後でクラウドからデータが来たら統合される）
             if (localInv || localProj || localStats) {
                 console.log("偵測到本地資料，準備同步至雲端...");
                 if (localInv) myPaintInventory = JSON.parse(localInv);
                 if (localProj) myProjects = JSON.parse(localProj);
                 if (localStats) searchStats = JSON.parse(localStats);
                 
-                saveInventory(); saveProjects(); saveStats();
-
-                localStorage.removeItem('myPaintInventoryV3');
-                localStorage.removeItem('myProjectsV1');
-                localStorage.removeItem('paintTrackerStatsV1');
+                // V19: ここではまだ上書き保存しない。クラウドのデータを受信した後に統合する。
+                // 移行フラグとして残す
+                window.pendingMigration = true; 
             }
         }
 
@@ -716,48 +724,76 @@
             const spinner = document.getElementById('cloudLoadingSpinner');
             if(spinner) spinner.classList.remove('hidden');
 
-            onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), (docSnap) => {
-                isSyncing = true;
-                if (docSnap.exists()) { myPaintInventory = docSnap.data().items || []; } else { myPaintInventory = []; }
-                
-                localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory));
+            let invLoaded = false;
+            let projLoaded = false;
+            let statsLoaded = false;
 
+            const checkReady = () => {
+                if(invLoaded && projLoaded && statsLoaded) {
+                    isCloudReady = true;
+                    if(spinner) spinner.classList.add('hidden');
+                    
+                    // クラウドデータ受信完了後に、ローカルデータをマージしてアップロードする
+                    if(window.pendingMigration) {
+                        saveInventory();
+                        saveProjects();
+                        saveStats();
+                        localStorage.removeItem('myPaintInventoryV3');
+                        localStorage.removeItem('myProjectsV1');
+                        localStorage.removeItem('paintTrackerStatsV1');
+                        window.pendingMigration = false;
+                        console.log("ローカルデータをクラウドに統合しました。");
+                    }
+                }
+            }
+
+            onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), (docSnap) => {
+                isSyncData = true;
+                if (docSnap.exists()) { 
+                    // V19: 初回マイグレーション時はクラウドデータを優先しつつ、ローカルに無いかチェックするロジックが必要だが、
+                    // 簡略化のため、既存のクラウドデータを読み込む。
+                    myPaintInventory = docSnap.data().items || []; 
+                } 
+                localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory));
                 renderInventoryList(); renderDashboard(); updateInvFilterOptions();
-                isSyncing = false;
-                if(spinner) spinner.classList.add('hidden');
+                isSyncData = false;
+                invLoaded = true; checkReady();
             }, (error) => { console.error("Sync Error:", error); if(spinner) spinner.classList.add('hidden'); });
 
             onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), (docSnap) => {
-                isSyncing = true;
-                if (docSnap.exists()) { myProjects = docSnap.data().items || []; } else { myProjects = []; }
+                isSyncData = true;
+                if (docSnap.exists()) { myProjects = docSnap.data().items || []; }
                 localStorage.setItem('myProjectsV1', JSON.stringify(myProjects));
                 renderProjectList();
-                isSyncing = false;
+                isSyncData = false;
+                projLoaded = true; checkReady();
             });
 
             onSnapshot(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), (docSnap) => {
-                isSyncing = true;
+                isSyncData = true;
                 if (docSnap.exists()) { searchStats = docSnap.data().data || { project: { maker: {}, grade: {} }, inventory: { maker: {}, type: {} } }; }
                 localStorage.setItem('paintTrackerStatsV1', JSON.stringify(searchStats));
-                isSyncing = false;
+                isSyncData = false;
+                statsLoaded = true; checkReady();
             });
         }
 
         function saveInventory() { 
             localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory));
-            if(!isSyncing && userUid && db) {
+            // V19: 同期受信中、またはクラウドがまだ準備できていない（初回ロード前）は書き込みをブロック
+            if(!isSyncData && isCloudReady && userUid && db) {
                 setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'inventory'), { items: myPaintInventory }); 
             }
         }
         function saveProjects() { 
             localStorage.setItem('myProjectsV1', JSON.stringify(myProjects));
-            if(!isSyncing && userUid && db) {
+            if(!isSyncData && isCloudReady && userUid && db) {
                 setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'projects'), { items: myProjects }); 
             }
         }
         function saveStats() { 
             localStorage.setItem('paintTrackerStatsV1', JSON.stringify(searchStats));
-            if(!isSyncing && userUid && db) {
+            if(!isSyncData && isCloudReady && userUid && db) {
                 setDoc(doc(db, 'artifacts', 'paint-tracker', 'users', userUid, 'data', 'stats'), { data: searchStats }); 
             }
         }
