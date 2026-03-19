@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Visual Paint Tracker - 塗裝配方管理系統 (Gen 2 V32)</title>
+    <title>Visual Paint Tracker - 塗裝配方管理系統 (Gen 2 V33)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         canvas { user-select: none; -webkit-user-select: none; touch-action: none; }
@@ -27,7 +27,7 @@
     <div id="authOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white transition-opacity duration-500">
         <svg class="w-16 h-16 text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <h1 class="text-3xl font-black mb-2 tracking-wider">PAINT TRACKER</h1>
-        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">GEN 2 LOGIC REBUILD V32</p>
+        <p class="mb-8 text-slate-400 text-sm font-bold tracking-widest">GEN 2 UI RESTORE V33</p>
         <button id="googleLoginBtn" class="bg-white text-slate-800 px-6 py-3 rounded-full font-bold shadow-xl hover:bg-slate-100 transition transform hover:scale-105 flex items-center">Google 帳號登入 (雲端同步)</button>
         <button id="guestLoginBtn" class="mt-6 text-slate-400 underline hover:text-white transition text-sm" data-i18n="guest-btn">訪客模式 (單機版 Offline Mode)</button>
         <div id="authLoading" class="hidden mt-4 text-sm text-slate-400 animate-pulse">連線中...</div>
@@ -53,16 +53,37 @@
                     <h2 class="text-2xl font-bold text-slate-800">塗裝專案一覽</h2>
                     <button id="createNewProjectBtn" class="bg-blue-600 text-white px-4 py-2 rounded shadow font-bold transition hover:bg-blue-500">新增專案</button>
                 </div>
-                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <select id="filterCategory" class="w-full bg-white border border-slate-300 rounded p-2 text-sm font-bold">
-                        <option value="ALL">全部狀態</option>
-                        <option value="WIP">製作中</option>
-                        <option value="STRAIGHT">剪件/素組</option>
-                        <option value="PAINTED">全塗裝</option>
-                    </select>
-                    <select id="filterMaker" class="w-full bg-white border border-slate-300 rounded p-2 text-sm"><option value="ALL">全部廠商</option></select>
-                    <select id="filterGrade" class="w-full bg-white border border-slate-300 rounded p-2 text-sm"><option value="ALL">全部比例</option></select>
-                    <input type="text" id="filterName" placeholder="搜尋專案..." class="w-full bg-white border border-slate-300 rounded p-2 text-sm">
+                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">工程狀態 (Status)</label>
+                            <select id="filterCategory" class="w-full bg-white border border-slate-300 rounded p-2 text-sm font-bold">
+                                <option value="ALL">全部狀態</option>
+                                <option value="WIP">製作中</option>
+                                <option value="STRAIGHT">剪件/素組</option>
+                                <option value="PAINTED">全塗裝</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">廠商 (Maker)</label>
+                            <select id="filterMaker" class="w-full bg-white border border-slate-300 rounded p-2 text-sm"><option value="ALL">全部廠商</option></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">比例/等級 (Grade)</label>
+                            <select id="filterGrade" class="w-full bg-white border border-slate-300 rounded p-2 text-sm"><option value="ALL">全部比例</option></select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">作品名稱搜尋</label>
+                            <input type="text" id="filterName" placeholder="搜尋專案..." class="w-full bg-white border border-slate-300 rounded p-2 text-sm">
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-xs mt-2 border-t pt-2 border-slate-200">
+                        <span class="text-slate-500 font-bold flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <span data-i18n="inv-quick">常用條件:</span>
+                        </span>
+                        <div id="projectQuickFilters" class="flex flex-wrap gap-2"></div>
+                    </div>
                 </div>
                 <div id="projectGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </div>
@@ -156,10 +177,31 @@
                 <button class="tab-btn flex-1 py-3 hover:text-gray-700 hover:bg-gray-50 transition" data-status="欲しい">預購清單</button>
                 <button class="tab-btn flex-1 py-3 hover:text-gray-700 hover:bg-gray-50 transition" data-status="お気に入り">最愛</button>
             </div>
-            <div class="bg-slate-50 p-3 border-b border-gray-200 text-sm flex gap-2">
-                <select id="invFilterMaker" class="w-1/2 border rounded p-2 outline-none"><option value="ALL">全部廠商</option></select>
-                <select id="invFilterType" class="w-1/2 border rounded p-2 outline-none"><option value="ALL">全部種類</option></select>
+            
+            <div class="bg-slate-50 p-3 border-b border-gray-200 text-sm">
+                <div class="flex flex-col md:flex-row gap-2 mb-2">
+                    <div class="w-full md:w-1/2">
+                        <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="inv-maker">廠商 (Maker)</label>
+                        <select id="invFilterMaker" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="ALL">全部廠商</option>
+                        </select>
+                    </div>
+                    <div class="w-full md:w-1/2">
+                        <label class="block text-xs font-bold text-slate-500 mb-1" data-i18n="inv-type">種類 (Type)</label>
+                        <select id="invFilterType" class="w-full bg-white border border-slate-300 rounded p-2 text-slate-700 outline-none focus:ring-1 focus:ring-blue-500">
+                            <option value="ALL">全部種類</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-xs mt-2">
+                    <span class="text-slate-500 font-bold flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        <span data-i18n="inv-quick">常用條件:</span>
+                    </span>
+                    <div id="invQuickFilters" class="flex flex-wrap gap-2"></div>
+                </div>
             </div>
+
             <div class="flex-grow overflow-y-auto p-4 bg-gray-50">
                 <ul id="inventoryListUI" class="space-y-2"></ul>
             </div>
@@ -257,7 +299,6 @@
                     <input type="text" id="paintInput" class="w-full border-blue-300 border-2 rounded p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50" placeholder="搜尋主色 (例: UG09, C-1)" autocomplete="off">
                     <ul id="autocompleteListMain" class="absolute bg-white border border-gray-200 shadow-xl hidden z-30 w-full max-h-40 overflow-y-auto rounded-b"></ul>
                 </div>
-                <!-- V32: 新增保護漆選項 -->
                 <div>
                     <label class="block text-xs font-bold text-slate-500 mb-1 mt-1">4. 保護漆 (Topcoat)</label>
                     <select id="topcoatSelect" class="w-full border border-slate-300 rounded p-2 text-sm bg-slate-50 outline-none">
@@ -346,6 +387,7 @@
                     if(db) {
                         db.doc(`artifacts/paint-tracker/users/${userUid}/data/projects`).onSnapshot(snap => { if(snap.exists) { myProjects = snap.data().items; renderProjectList(); }});
                         db.doc(`artifacts/paint-tracker/users/${userUid}/data/inventory`).onSnapshot(snap => { if(snap.exists) { myPaintInventory = snap.data().items; renderInventoryList(); renderDashboard(); }});
+                        db.doc(`artifacts/paint-tracker/users/${userUid}/data/stats`).onSnapshot(snap => { if(snap.exists) { searchStats = snap.data().data; renderProjectList(); renderInventoryList(); }});
                     }
                 } else userUid = null;
             });
@@ -359,6 +401,44 @@
         function saveProjects() { try{ localStorage.setItem('myProjectsV1', JSON.stringify(myProjects)); if(userUid && db) db.doc(`artifacts/paint-tracker/users/${userUid}/data/projects`).set({items:myProjects}); }catch(e){} }
         function saveInventory() { try{ localStorage.setItem('myPaintInventoryV3', JSON.stringify(myPaintInventory)); if(userUid && db) db.doc(`artifacts/paint-tracker/users/${userUid}/data/inventory`).set({items:myPaintInventory}); }catch(e){} }
         function saveStats() { try{ localStorage.setItem('paintTrackerStatsV1', JSON.stringify(searchStats)); if(userUid && db) db.doc(`artifacts/paint-tracker/users/${userUid}/data/stats`).set({data:searchStats}); }catch(e){} }
+
+        // === 2.5 Quick Filters & Stats ===
+        function trackSearch(context, category, value) {
+            if (!value || value === 'ALL') return;
+            if(!searchStats[context]) searchStats[context] = {};
+            if(!searchStats[context][category]) searchStats[context][category] = {};
+            if (!searchStats[context][category][value]) searchStats[context][category][value] = 0;
+            searchStats[context][category][value]++;
+            saveStats(); renderQuickFilters(context);
+        }
+
+        function renderQuickFilters(context) {
+            let containerId = context === 'project' ? 'projectQuickFilters' : 'invQuickFilters';
+            let container = document.getElementById(containerId); if(!container) return; container.innerHTML = '';
+            let topTermsPerCategory = [];
+            if(searchStats[context]) {
+                Object.keys(searchStats[context]).forEach(category => {
+                    if(category === 'category') return; 
+                    let terms = searchStats[context][category] || {}; let categoryTerms = [];
+                    Object.keys(terms).forEach(val => categoryTerms.push({ category: category, value: val, count: terms[val] }));
+                    categoryTerms.sort((a, b) => b.count - a.count);
+                    topTermsPerCategory = topTermsPerCategory.concat(categoryTerms.slice(0, 3));
+                });
+            }
+            if (topTermsPerCategory.length === 0) { container.innerHTML = '<span class="text-gray-400 italic">無履歴</span>'; return; }
+            topTermsPerCategory.forEach(term => {
+                let btn = document.createElement('button');
+                let prefix = ''; if(term.category === 'maker') prefix = '🏭 '; else if(term.category === 'grade') prefix = '📏 '; else if(term.category === 'type') prefix = '💧 ';
+                btn.className = 'bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold transition shadow-sm border border-blue-200';
+                btn.textContent = prefix + term.value; btn.onclick = () => window.applyQuickFilter(context, term.category, term.value);
+                container.appendChild(btn);
+            });
+        }
+
+        window.applyQuickFilter = function(context, category, value) {
+            if (context === 'project') { let el = document.getElementById(category === 'maker' ? 'filterMaker' : 'filterGrade'); if(el) { el.value = value; renderProjectList(); } } 
+            else if (context === 'inventory') { let el = document.getElementById(category === 'maker' ? 'invFilterMaker' : 'invFilterType'); if(el) { el.value = value; renderInventoryList(); } }
+        };
 
         // === 3. UI Navigation & Dashboard ===
         function switchView(t) {
@@ -381,10 +461,29 @@
         }
 
         // === 4. Project List ===
-        document.getElementById('filterCategory').onchange = renderProjectList; document.getElementById('filterMaker').onchange = renderProjectList;
-        document.getElementById('filterGrade').onchange = renderProjectList; document.getElementById('filterName').oninput = renderProjectList;
+        function updateProjectFilterOptions() {
+            const filterMaker = document.getElementById('filterMaker');
+            const filterGrade = document.getElementById('filterGrade');
+            if(!filterMaker || !filterGrade) return;
+            const currentMaker = filterMaker.value; const currentGrade = filterGrade.value;
+            const uniqueMakers = [...new Set(myProjects.map(p => p.maker))].filter(Boolean).sort();
+            const uniqueGrades = [...new Set(myProjects.map(p => p.grade))].filter(Boolean).sort();
+
+            filterMaker.innerHTML = '<option value="ALL">全部廠商</option>'; uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
+            filterGrade.innerHTML = '<option value="ALL">全部比例</option>'; uniqueGrades.forEach(g => filterGrade.innerHTML += `<option value="${g}">${g}</option>`);
+
+            if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
+            if (uniqueGrades.includes(currentGrade)) filterGrade.value = currentGrade;
+        }
+
+        document.getElementById('filterCategory').addEventListener('change', () => renderProjectList());
+        document.getElementById('filterMaker').addEventListener('change', (e) => { trackSearch('project', 'maker', e.target.value); renderProjectList(); });
+        document.getElementById('filterGrade').addEventListener('change', (e) => { trackSearch('project', 'grade', e.target.value); renderProjectList(); });
+        document.getElementById('filterName').addEventListener('input', () => renderProjectList());
 
         function renderProjectList() {
+            updateProjectFilterOptions();
+            renderQuickFilters('project');
             let grid = document.getElementById('projectGrid'); grid.innerHTML = '';
             let cF = document.getElementById('filterCategory').value, mF = document.getElementById('filterMaker').value, gF = document.getElementById('filterGrade').value, nF = document.getElementById('filterName').value.toLowerCase();
             
@@ -526,14 +625,14 @@
                         document.getElementById('paintInput').value = ms[foundIdx].name; 
                         document.getElementById('primerSelect').value = ms[foundIdx].primer||'なし'; 
                         document.getElementById('primerPaintInput').value = ms[foundIdx].primerPaint||'';
-                        document.getElementById('topcoatSelect').value = ms[foundIdx].topcoat||'なし'; // V32: Load Topcoat
+                        document.getElementById('topcoatSelect').value = ms[foundIdx].topcoat||'なし'; 
                         document.getElementById('paintModal').classList.remove('hidden'); document.getElementById('paintInput').focus();
                     }, 300);
                 }
             } else {
                 clearTimeout(clickTimer); editingMarkerIndex = -1; tempCoord = p;
                 document.getElementById('modalTitle').textContent = "加入塗料"; document.getElementById('deletePaintBtn').classList.add('hidden');
-                document.getElementById('paintInput').value = ""; document.getElementById('primerPaintInput').value = ""; document.getElementById('topcoatSelect').value = "なし"; // V32: Reset Topcoat
+                document.getElementById('paintInput').value = ""; document.getElementById('primerPaintInput').value = ""; document.getElementById('topcoatSelect').value = "なし"; 
                 document.getElementById('paintModal').classList.remove('hidden'); document.getElementById('paintInput').focus();
             }
         }
@@ -553,7 +652,7 @@
             let mData = {
                 name: pName, paintId: pid, brand: b,
                 primer: document.getElementById('primerSelect').value, primerPaint: document.getElementById('primerPaintInput').value.trim(),
-                topcoat: document.getElementById('topcoatSelect').value, // V32: Save Topcoat
+                topcoat: document.getElementById('topcoatSelect').value, 
                 expanded: false, hitBox: {w:0,h:0}
             };
             if(editingMarkerIndex >= 0) {
@@ -608,7 +707,6 @@
             if(!canvas) return; ctx.clearRect(0,0,canvas.width,canvas.height); if(uploadedImage.src) ctx.drawImage(uploadedImage,0,0,canvas.width,canvas.height);
             let fSize=14*globalLabelScale;
             
-            // V32: 復原底漆顏色映射矩陣 (Color Mapping Table)
             const primerColors = {
                 "なし": { bg: "rgba(0, 0, 0, 0.7)", text: "#ffffff", stroke: "rgba(255, 255, 255, 0.9)" },
                 "成型色活かし": { bg: "rgba(46, 139, 87, 0.9)", text: "#ffffff", stroke: "rgba(255, 255, 255, 0.9)" },
@@ -624,7 +722,7 @@
 
             (currentProjectMarkers[currentImageIndex]||[]).forEach((m,i) => {
                 let txt = getMarkerText(m,i);
-                let c = primerColors[m.primer] || primerColors["なし"]; // 讀取顏色
+                let c = primerColors[m.primer] || primerColors["なし"]; 
                 
                 ctx.font=`bold ${fSize}px sans-serif`; let w1=ctx.measureText(txt.main).width;
                 ctx.font=`bold ${fSize*0.7}px sans-serif`; 
@@ -635,15 +733,12 @@
                 let h=fSize+16+(txt.sub?fSize*0.7+4:0)+(txt.top?fSize*0.7+4:0);
                 m.hitBox={x:m.labelX, y:m.labelY, w:w, h:h};
                 
-                // Draw connecting line
                 ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(m.labelX+w/2, m.labelY+h/2); 
                 ctx.strokeStyle = c.stroke; ctx.lineWidth=4; ctx.stroke(); 
                 ctx.strokeStyle = '#ef4444'; ctx.lineWidth=2; ctx.stroke();
                 
-                // Draw label box
                 ctx.fillStyle = c.bg; ctx.beginPath(); ctx.roundRect(m.labelX, m.labelY, w, h, 5); ctx.fill();
                 
-                // Draw texts
                 ctx.fillStyle = c.text; ctx.textBaseline='top'; 
                 ctx.font=`bold ${fSize}px sans-serif`; ctx.fillText(txt.main, m.labelX+8, m.labelY+8);
                 
@@ -653,15 +748,14 @@
                 if(txt.top) { ctx.fillText(txt.top, m.labelX+8, currentY); }
                 ctx.globalAlpha = 1.0;
                 
-                // Draw red dot
                 ctx.beginPath(); ctx.arc(m.x, m.y, 5, 0, 7); ctx.fillStyle='red'; ctx.fill();
             });
         }
 
         function updateBomList() {
             let lst = document.getElementById('paintList'); lst.innerHTML = '';
-            let ms = currentProjectMarkers[currentImageIndex]||[]; if(!ms.length) { lst.innerHTML='<p class="text-gray-500 italic">無資料。</p>'; return; }
-            let gb = ms.reduce((a,m,i)=>{ let b=m.brand||'其他'; if(!a[b])a[b]=[]; a[b].push({...m, idx:i+1}); return a; }, {});
+            let ms = currentProjectMarkers[currentImageIndex]||[]; if(!ms.length) { lst.innerHTML='<p class="text-sm text-gray-500 italic">尚未登錄任何塗料。</p>'; return; }
+            let gb = ms.reduce((a,m,i)=>{ let b=m.brand||'その他'; if(!a[b])a[b]=[]; a[b].push({...m, idx:i+1}); return a; }, {});
             Object.keys(gb).sort().forEach(b => {
                 lst.innerHTML += `<h3 class="font-bold text-sm bg-slate-200 px-3 py-1 mt-4 mb-2 rounded inline-block">■ ${b}</h3><ul class="space-y-2">` + 
                 gb[b].map(m => {
@@ -673,7 +767,104 @@
             });
         }
 
-        // 搜尋自動完成 (支援MasterDB)
+        // === 7. Inventory Logic (在庫管理 + MasterDB Search) ===
+        let invTab = '所持';
+        const inventoryListUI = document.getElementById('inventoryListUI');
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold'); b.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50'); });
+                const target = e.currentTarget; target.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:bg-gray-50'); target.classList.add('text-blue-600', 'border-b-2', 'border-blue-600', 'font-bold');
+                invTab = target.getAttribute('data-status');
+                renderInventoryList();
+            });
+        });
+
+        function updateInvFilterOptions() {
+            const filterMaker = document.getElementById('invFilterMaker');
+            const filterType = document.getElementById('invFilterType');
+            if(!filterMaker || !filterType) return;
+            const currentMaker = filterMaker.value; const currentType = filterType.value;
+            const uniqueMakers = [...new Set(myPaintInventory.map(p => p.brand))].filter(Boolean).sort();
+            const uniqueTypes = [...new Set(myPaintInventory.map(p => p.type))].filter(Boolean).sort();
+
+            filterMaker.innerHTML = '<option value="ALL">全部廠商</option>'; uniqueMakers.forEach(m => filterMaker.innerHTML += `<option value="${m}">${m}</option>`);
+            filterType.innerHTML = '<option value="ALL">全部種類</option>'; uniqueTypes.forEach(t => filterType.innerHTML += `<option value="${t}">${t}</option>`);
+
+            if (uniqueMakers.includes(currentMaker)) filterMaker.value = currentMaker;
+            if (uniqueTypes.includes(currentType)) filterType.value = currentType;
+        }
+
+        document.getElementById('invFilterMaker').addEventListener('change', (e) => { trackSearch('inventory', 'maker', e.target.value); renderInventoryList(); });
+        document.getElementById('invFilterType').addEventListener('change', (e) => { trackSearch('inventory', 'type', e.target.value); renderInventoryList(); });
+
+        function renderInventoryList() {
+            updateInvFilterOptions();
+            renderQuickFilters('inventory');
+
+            const makerFilterVal = document.getElementById('invFilterMaker').value;
+            const typeFilterVal = document.getElementById('invFilterType').value;
+
+            inventoryListUI.innerHTML = '';
+            let filteredInventory = invTab === 'お気に入り' ? myPaintInventory.filter(item => item.isFavorite) : myPaintInventory.filter(item => item.status === invTab);
+
+            filteredInventory = filteredInventory.filter(item => {
+                return (makerFilterVal === 'ALL' || item.brand === makerFilterVal) && (typeFilterVal === 'ALL' || item.type === typeFilterVal);
+            });
+
+            filteredInventory.sort((a, b) => a.brand.localeCompare(b.brand));
+            if(filteredInventory.length === 0) { inventoryListUI.innerHTML = `<div class="text-center py-8 text-gray-400 text-sm">無資料。</div>`; return; }
+
+            filteredInventory.forEach(item => {
+                const li = document.createElement('li'); li.className = 'bg-white rounded-lg shadow-sm border border-gray-200 p-3 flex flex-col md:flex-row justify-between md:items-center';
+                let brandColor = 'bg-slate-200 text-slate-700';
+                if(item.brand.includes('ガイア')) brandColor = 'bg-green-100 text-green-700';
+                else if(item.brand.includes('GSI')) brandColor = 'bg-blue-100 text-blue-700';
+                else if(item.brand.includes('タミヤ')) brandColor = 'bg-red-100 text-red-700';
+
+                const heartColor = item.isFavorite ? 'text-red-500' : 'text-gray-300 hover:text-red-400';
+                const heartFill = item.isFavorite ? 'currentColor' : 'none';
+                let purchaseBtnHtml = '';
+                if (item.status === '欲しい' && item.qty > 0) {
+                    purchaseBtnHtml = `<div class="mt-3 pt-2 border-t border-gray-100 flex justify-end w-full md:hidden"><button onclick="purchaseItem('${item.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition flex items-center">購入</button></div>`;
+                }
+
+                let refHtml = item.ref ? `<div class="text-[10px] text-indigo-500 mt-1">參考: ${item.ref}</div>` : '';
+
+                li.innerHTML = `
+                    <div class="mb-2 md:mb-0 w-full md:w-auto">
+                        <div class="flex items-center mb-1">
+                            <span class="inline-block px-2 py-0.5 ${brandColor} text-[10px] font-bold rounded mr-2">${item.brand}</span>
+                            <span class="text-[10px] bg-yellow-100 text-yellow-800 font-bold px-2 py-0.5 rounded mr-2 border border-yellow-200">${item.type || 'その他'}</span>
+                            ${item.series ? `<span class="text-[10px] bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded mr-2">${item.series}</span>` : ''}
+                            <span class="text-xs font-mono bg-gray-100 px-1 rounded text-gray-600">${item.id}</span>
+                        </div>
+                        <div class="font-bold text-gray-800 text-sm">${item.name}</div>
+                        ${refHtml}
+                    </div>
+                    <div class="flex items-center justify-between md:justify-end space-x-2 md:space-x-3 bg-gray-50 p-1.5 rounded border border-gray-100 mt-2 md:mt-0 w-full md:w-auto">
+                        <button onclick="toggleFavorite('${item.uid}')" class="${heartColor} p-1 transition" title="お気に入り"><svg class="w-6 h-6" fill="${heartFill}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg></button>
+                        <select onchange="updateInv('${item.uid}','status',this.value)" class="text-xs border border-gray-300 rounded p-1 bg-white outline-none focus:ring-1 focus:ring-blue-500"><option value="所持" ${item.status === '所持' ? 'selected' : ''}>所持</option><option value="欲しい" ${item.status === '欲しい' ? 'selected' : ''}>欲しい</option></select>
+                        <div class="flex items-center border border-gray-300 rounded bg-white h-8"><button onclick="updateInv('${item.uid}', 'qty', -1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-red-500 transition h-full font-bold">-</button><input type="number" readonly value="${item.qty}" class="w-8 text-center text-sm font-bold text-gray-700 border-x border-gray-200 h-full outline-none bg-transparent"><button onclick="updateInv('${item.uid}', 'qty', 1)" class="px-2 text-gray-500 hover:bg-gray-100 hover:text-blue-500 transition h-full font-bold">+</button></div>
+                        <button onclick="updateInv('${item.uid}','del')" class="text-red-400 hover:text-red-600 p-1 transition" title="削除"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                        ${item.status === '欲しい' && item.qty > 0 ? `<button onclick="purchaseItem('${item.uid}')" class="bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded text-xs font-bold shadow hidden md:block">購入</button>` : ''}
+                    </div>
+                    ${purchaseBtnHtml}
+                `;
+                inventoryListUI.appendChild(li);
+            });
+        }
+
+        window.updateInv = (uid, act, val) => {
+            let i = myPaintInventory.findIndex(p=>p.uid===uid); if(i<0) return;
+            if(act==='status') myPaintInventory[i].status = val;
+            else if(act==='qty') { myPaintInventory[i].qty = Math.max(0, myPaintInventory[i].qty+val); }
+            else if(act==='del') { if(confirm('刪除？')) myPaintInventory.splice(i,1); }
+            saveInventory(); renderInventoryList(); renderDashboard();
+        };
+        window.toggleFavorite = (uid) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.isFavorite = !item.isFavorite; saveInventory(); renderInventoryList(); } }
+        window.purchaseItem = (uid) => { const item = myPaintInventory.find(p => p.uid === uid); if(item) { item.status = '所持'; if(item.qty <= 0) item.qty = 1; saveInventory(); renderInventoryList(); renderDashboard(); } }
+
         function setupAuto(idI, idL, master) {
             let inp=document.getElementById(idI), lst=document.getElementById(idL);
             inp.oninput = () => {
@@ -683,14 +874,14 @@
                 if(match.length) {
                     lst.classList.remove('hidden');
                     match.forEach(m => {
-                        let li = document.createElement('li'); li.className='p-2 hover:bg-gray-100 cursor-pointer text-xs font-bold';
-                        li.innerHTML = `${m.brand.substring(0,3)} ${m.id} ${m.name} ${!master?`<span class="${m.qty>0?'text-green-600':'text-red-500'} ml-2">(在庫:${m.qty})</span>`:''}`;
+                        let li = document.createElement('li'); li.className='p-2 hover:bg-gray-100 cursor-pointer text-xs font-bold border-b border-gray-100';
+                        li.innerHTML = `<div class="flex justify-between items-center"><span>${m.brand.substring(0,3)} ${m.id} ${m.name}</span> ${!master?`<span class="${m.qty>0?'text-green-600':'text-red-500'} ml-2">(在庫:${m.qty})</span>`:''}</div>`;
                         li.onclick = () => { 
                             if(idI === 'masterSearchInput') {
                                 let tStat = (invTab === '欲しい') ? '欲しい' : '所持'; let tFav = (invTab === 'お気に入り');
                                 let ex = myPaintInventory.find(p => p.id === m.id && p.brand === m.brand);
                                 if (ex) { if (tStat === '所持') { ex.qty += 1; ex.status = '所持'; } else if (tStat === '欲しい' && ex.status !== '所持') { ex.qty += 1; } if (tFav) ex.isFavorite = true; } 
-                                else { myPaintInventory.unshift({ uid: generateUid(), brand: m.brand, id: m.id, name: `${m.brand.substring(0,3)} ${m.id} ${m.name}`, status: tStat, qty: tStat === '所持' ? 1 : 0, isFavorite: tFav, type: m.type || 'その他', series: m.series || '' }); }
+                                else { myPaintInventory.unshift({ uid: generateUid(), brand: m.brand, id: m.id, name: `${m.brand.substring(0,3)} ${m.id} ${m.name}`, status: tStat, qty: tStat === '所持' ? 1 : 0, isFavorite: tFav, type: m.type || 'その他', series: m.series || '', ref: m.ref || '' }); }
                                 saveInventory(); inp.value = ''; lst.classList.add('hidden'); renderInventoryList(); renderDashboard();
                             } else {
                                 inp.value = master ? `${m.brand.substring(0,3)} ${m.id} ${m.name}` : m.name; lst.classList.add('hidden'); 
@@ -698,10 +889,15 @@
                         };
                         lst.appendChild(li);
                     });
-                } else lst.classList.add('hidden');
+                } else {
+                    lst.classList.remove('hidden');
+                    lst.innerHTML = '<li class="p-3 text-sm text-gray-500 text-center italic">無資料</li>';
+                }
             };
         }
-        setupAuto('paintInput', 'autocompleteListMain', true); setupAuto('primerPaintInput', 'autocompleteListPrimer', true); setupAuto('masterSearchInput', 'masterAutocompleteList', true);
+        setupAuto('paintInput', 'autocompleteListMain', true); 
+        setupAuto('primerPaintInput', 'autocompleteListPrimer', true); 
+        setupAuto('masterSearchInput', 'masterAutocompleteList', true);
 
         // Export (TXT / Image)
         document.getElementById('exportImageBtn').onclick = () => { let l=document.createElement('a'); l.download='recipe.png'; l.href=canvas.toDataURL('image/png'); l.click(); };
@@ -719,51 +915,18 @@
             let l=document.createElement('a'); l.download='BOM.txt'; l.href=URL.createObjectURL(new Blob([txt])); l.click();
         };
 
-        // Inventory Management
-        let invTab = '所持';
-        document.querySelectorAll('.tab-btn').forEach(b => b.onclick = (e) => {
-            document.querySelectorAll('.tab-btn').forEach(btn=>{btn.classList.remove('text-blue-600','border-blue-600');btn.classList.add('text-gray-500');});
-            e.currentTarget.classList.add('text-blue-600','border-blue-600'); e.currentTarget.classList.remove('text-gray-500');
-            invTab = e.currentTarget.dataset.status; renderInventoryList();
-        });
-
-        function renderInventoryList() {
-            let ui = document.getElementById('inventoryListUI'); ui.innerHTML = '';
-            let fM = document.getElementById('invFilterMaker').value, fT = document.getElementById('invFilterType').value;
-            let list = myPaintInventory.filter(p => (invTab==='お気に入り'?p.isFavorite:p.status===invTab) && (fM==='ALL'||p.brand===fM) && (fT==='ALL'||p.type===fT));
-            if(!list.length) { ui.innerHTML = '<p class="text-center py-4 text-gray-500">無資料</p>'; return; }
-            list.forEach(p => {
-                let div = document.createElement('li'); div.className = 'bg-white p-3 border rounded shadow-sm flex flex-col md:flex-row justify-between md:items-center';
-                div.innerHTML = `
-                    <div><span class="text-xs bg-gray-200 px-1 rounded mr-2">${p.brand}</span><span class="text-sm font-bold">${p.name}</span></div>
-                    <div class="flex items-center gap-2 mt-2 md:mt-0">
-                        <select onchange="updateInv('${p.uid}','status',this.value)" class="text-xs border rounded p-1"><option value="所持" ${p.status==='所持'?'selected':''}>所持</option><option value="欲しい" ${p.status==='欲しい'?'selected':''}>欲しい</option></select>
-                        <div class="border rounded flex items-center bg-white"><button class="px-2 text-gray-500" onclick="updateInv('${p.uid}','qty',-1)">-</button><input type="number" value="${p.qty}" readonly class="w-8 text-center text-sm outline-none"><button class="px-2 text-gray-500" onclick="updateInv('${p.uid}','qty',1)">+</button></div>
-                        <button class="text-red-400 hover:text-red-600 px-1" onclick="updateInv('${p.uid}','del')">刪</button>
-                    </div>`;
-                ui.appendChild(div);
-            });
-        }
-        window.updateInv = (uid, act, val) => {
-            let i = myPaintInventory.findIndex(p=>p.uid===uid); if(i<0) return;
-            if(act==='status') myPaintInventory[i].status = val;
-            else if(act==='qty') { myPaintInventory[i].qty = Math.max(0, myPaintInventory[i].qty+val); }
-            else if(act==='del') { if(confirm('刪除？')) myPaintInventory.splice(i,1); }
-            saveInventory(); renderInventoryList(); renderDashboard();
-        };
-
         // System Settings & Backup
         document.getElementById('exportBtn').onclick = () => { let l=document.createElement('a'); l.download='backup.json'; l.href=URL.createObjectURL(new Blob([JSON.stringify({projects:myProjects, inventory:myPaintInventory})])); l.click(); };
         document.getElementById('importFile').onchange = (e) => {
             let r=new FileReader(); r.onload=(ev)=>{ try{ let d=JSON.parse(ev.target.result); myProjects=d.projects||[]; myPaintInventory=d.inventory||[]; saveProjects(); saveInventory(); alert('匯入成功'); location.reload(); }catch(e){alert('格式錯誤');} }; r.readAsText(e.target.files[0]);
         };
         document.getElementById('resetProjectsBtn').onclick = () => { if(confirm('清空專案？')){ myProjects=[]; saveProjects(); renderProjectList(); } };
-        document.getElementById('resetInventoryBtn').onclick = () => { if(confirm('清空庫存？')){ myPaintInventory=[]; saveInventory(); renderInventoryList(); } };
+        document.getElementById('resetInventoryBtn').onclick = () => { if(confirm('清空庫存？')){ myPaintInventory=[]; saveInventory(); renderInventoryList(); renderDashboard(); } };
 
         // i18n
         const langDict = {
-            "zh": {"guest-btn":"訪客模式 (單機版 Offline Mode)","nav-proj":"專案/配方","nav-inv":"庫存管理","nav-dash":"所持狀況","nav-set":"系統設定","set-title":"系統設定 (Settings)","set-lang":"介面語言 (Language)","set-disc":"免責聲明與製作人 (Disclaimer & Creator)","set-disc-txt":"本應用程式內記載之所有塗料名稱、品牌與商標皆屬於原權利所有者。<br>本工具為第三方獨立開發之管理應用程式，與各原廠無任何關聯。<br>資料準確性不予保證，實際使用請參閱原廠官方資訊。","set-creator":"製作者 M.K(TW)"},
-            "ja": {"guest-btn":"ゲストモード (オフライン)","nav-proj":"プロジェクト","nav-inv":"在庫管理","nav-dash":"ダッシュボード","nav-set":"設定","set-title":"システム設定 (Settings)","set-lang":"言語設定 (Language)","set-disc":"免責事項と製作者 (Disclaimer & Creator)","set-disc-txt":"本アプリ内の塗料名称・商標等は各権利者に帰属します。<br>本ツールは非公式アプリであり、各メーカーとは一切関係ありません。<br>正確性の保証はありません。","set-creator":"製作者 M.K(TW)"}
+            "zh": {"guest-btn":"訪客模式 (單機版 Offline Mode)","nav-proj":"專案/配方","nav-inv":"庫存管理","nav-dash":"所持狀況","nav-set":"系統設定","set-title":"系統設定 (Settings)","set-lang":"介面語言 (Language)","set-disc":"免責聲明與製作人 (Disclaimer & Creator)","set-disc-txt":"本應用程式內記載之所有塗料名稱、品牌與商標皆屬於原權利所有者。<br>本工具為第三方獨立開發之管理應用程式，與各原廠無任何關聯。<br>資料準確性不予保證，實際使用請參閱原廠官方資訊。","set-creator":"製作者 M.K(TW)", "inv-maker":"廠商 (Maker)", "inv-type":"種類 (Type)", "inv-quick":"常用條件:"},
+            "ja": {"guest-btn":"ゲストモード (オフライン)","nav-proj":"プロジェクト","nav-inv":"在庫管理","nav-dash":"ダッシュボード","nav-set":"設定","set-title":"システム設定 (Settings)","set-lang":"言語設定 (Language)","set-disc":"免責事項と製作者 (Disclaimer & Creator)","set-disc-txt":"本アプリ内の塗料名称・商標等は各権利者に帰属します。<br>本ツールは非公式アプリであり、各メーカーとは一切関係ありません。<br>正確性の保証はありません。","set-creator":"製作者 M.K(TW)", "inv-maker":"メーカー (Maker)", "inv-type":"種類 (Type)", "inv-quick":"よく使う条件:"}
         };
         document.getElementById('langSelect').onchange = (e) => {
             localStorage.setItem('sysLang', e.target.value);
