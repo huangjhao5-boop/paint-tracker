@@ -1,0 +1,30 @@
+{
+  "name": "Visual Paint Tracker - 塗裝配方管理系統",
+  "short_name": "PaintTracker",
+  "description": "專業模型塗裝配方紀錄、視覺化標籤、庫存與色表管理系統 (Visual Paint Recipe & Inventory Tracker)",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

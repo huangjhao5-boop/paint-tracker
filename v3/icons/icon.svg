@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#ec4899" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="100" fill="url(#bgGrad)" />
+  <!-- Palette Shape -->
+  <path d="M256,96 C167.6,96 96,167.6 96,256 C96,344.4 167.6,416 256,416 C274.6,416 289.6,401 289.6,382.4 C289.6,373.8 286.1,365.9 280.4,360.2 C275,354.8 271.6,347.3 271.6,339 C271.6,320.4 286.6,305.4 305.2,305.4 L352,305.4 C387.3,305.4 416,276.7 416,241.4 C416,161 344.4,96 256,96 Z" fill="url(#blueGrad)" opacity="0.95"/>
+  <!-- Color Dots -->
+  <circle cx="180" cy="180" r="28" fill="#ef4444" />
+  <circle cx="256" cy="150" r="28" fill="#eab308" />
+  <circle cx="332" cy="180" r="28" fill="#10b981" />
+  <circle cx="160" cy="260" r="28" fill="#a855f7" />
+  <circle cx="350" cy="360" r="24" fill="#ffffff" opacity="0.9"/>
+  <!-- Crosshair Pin Marker Symbol -->
+  <circle cx="330" cy="235" r="16" fill="url(#accentGrad)"/>
+  <path d="M330,225 L330,245 M320,235 L340,235" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+</svg>
