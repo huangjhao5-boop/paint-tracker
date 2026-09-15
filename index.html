@@ -1588,26 +1588,37 @@
             return results.slice(0, topN);
         }
 
-        // === 5.2 Eyedropper Interaction Controller ===
+        // === 5.2 Eyedropper Interaction Controller (Offset Precision Loupe Engine) ===
         let isEyedropperActive = false;
+        let eyedropperCurrentPos = null; // { x, y } in canvas space
+        let isEyedropperPointerDown = false;
 
         function updateEyedropperUI() {
             const btn = document.getElementById('eyedropperBtn');
+            const statusText = document.getElementById('angleStatusText');
             if (!btn) return;
             if (isEyedropperActive) {
                 btn.classList.remove('bg-purple-100', 'text-purple-700', 'hover:bg-purple-200');
-                btn.classList.add('bg-purple-600', 'text-white', 'ring-2', 'ring-purple-400');
+                btn.classList.add('bg-purple-600', 'text-white', 'ring-2', 'ring-purple-400', 'animate-pulse');
                 canvas.style.cursor = 'crosshair';
+                if (statusText) statusText.textContent = "🔍 微觀吸色模式：按住畫布移動準心，放開即鎖定零件色號";
             } else {
-                btn.classList.remove('bg-purple-600', 'text-white', 'ring-2', 'ring-purple-400');
+                btn.classList.remove('bg-purple-600', 'text-white', 'ring-2', 'ring-purple-400', 'animate-pulse');
                 btn.classList.add('bg-purple-100', 'text-purple-700', 'hover:bg-purple-200');
                 canvas.style.cursor = 'crosshair';
+                const curMarkers = currentProjectMarkers[currentImageIndex] || [];
+                if (statusText) statusText.textContent = `視角 ${currentImageIndex + 1}：已標記 ${curMarkers.length} 處部位`;
             }
+            drawCanvas();
         }
 
         document.getElementById('eyedropperBtn').onclick = () => {
             if (!uploadedImage.src) return;
             isEyedropperActive = !isEyedropperActive;
+            if (!isEyedropperActive) {
+                eyedropperCurrentPos = null;
+                isEyedropperPointerDown = false;
+            }
             updateEyedropperUI();
         };
 
@@ -1707,6 +1718,15 @@
             if (!uploadedImage.src) return;
             mouseDownPos = getMousePos(e);
             let ms = currentProjectMarkers[currentImageIndex] || [];
+            
+            if (isEyedropperActive) {
+                eyedropperCurrentPos = mouseDownPos;
+                isEyedropperPointerDown = true;
+                drawCanvas();
+                e.preventDefault();
+                return;
+            }
+
             isDragging = false;
             for (let i = ms.length - 1; i >= 0; i--) {
                 let b = ms[i].hitBox;
@@ -1721,6 +1741,13 @@
         }
 
         function handlePointerMove(e) {
+            if (isEyedropperActive) {
+                eyedropperCurrentPos = getMousePos(e);
+                drawCanvas();
+                e.preventDefault();
+                return;
+            }
+
             if (dragIndex >= 0) {
                 let p = getMousePos(e);
                 if (Math.hypot(p.x - mouseDownPos.x, p.y - mouseDownPos.y) > 5) {
@@ -1738,19 +1765,12 @@
         
         function handlePointerUp(e) {
             if (!uploadedImage.src) return;
-            let p = getMousePos(e);
+            let p = eyedropperCurrentPos || getMousePos(e);
             let wasDragging = isDragging;
             isDragging = false;
             dragIndex = -1;
             canvas.style.cursor = 'crosshair';
-            
-            if (wasDragging) {
-                resolveCollisions();
-                drawCanvas();
-                return;
-            }
-            if (Math.hypot(p.x - mouseDownPos.x, p.y - mouseDownPos.y) > 5) return;
-            
+
             // If in Eyedropper mode, sample color and find closest paints
             if (isEyedropperActive) {
                 let sampled = sampleCanvasColor(p.x, p.y);
@@ -1798,9 +1818,18 @@
                 document.getElementById('paintInput').focus();
                 
                 isEyedropperActive = false;
+                eyedropperCurrentPos = null;
+                isEyedropperPointerDown = false;
                 updateEyedropperUI();
                 return;
             }
+            
+            if (wasDragging) {
+                resolveCollisions();
+                drawCanvas();
+                return;
+            }
+            if (Math.hypot(p.x - mouseDownPos.x, p.y - mouseDownPos.y) > 5) return;
 
             // Normal marker interaction
             document.getElementById('eyedropperMatchSection').classList.add('hidden');
@@ -2153,6 +2182,144 @@
                 ctx.fillStyle = '#ffffff';
                 ctx.fill();
             });
+
+            // Draw Precision Offset Magnifier Loupe if Eyedropper is active
+            if (isEyedropperActive && eyedropperCurrentPos) {
+                drawEyedropperLoupe(eyedropperCurrentPos.x, eyedropperCurrentPos.y);
+            }
+        }
+
+        // === Precision Loupe & Reticle Rendering Engine ===
+        function drawEyedropperLoupe(x, y) {
+            if (!uploadedImage.src || !canvas) return;
+            let sampled = sampleCanvasColor(x, y);
+            let matches = findClosestPaints(sampled.r, sampled.g, sampled.b, 1);
+            let topMatch = matches.length > 0 ? matches[0] : null;
+
+            // Determine loupe geometry with responsive scaling
+            let loupeR = Math.max(50, Math.min(85, canvas.width * 0.09));
+            let offsetY = -(loupeR + 55);
+            if (y + offsetY - loupeR < 15) {
+                offsetY = (loupeR + 55); // Flip down if near canvas top edge
+            }
+            let cx = x;
+            let cy = y + offsetY;
+
+            ctx.save();
+
+            // 1. Leader Line from touch point (x,y) to Loupe edge
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            let lineTargetY = cy > y ? cy - loupeR : cy + loupeR;
+            ctx.lineTo(cx, lineTargetY);
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 2. Target Pin at actual sampling point (x,y)
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+            ctx.fill();
+            ctx.strokeStyle = '#0284c7';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#ef4444';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 3. Magnified Image inside Loupe Clip Circle
+            ctx.beginPath();
+            ctx.arc(cx, cy, loupeR, 0, Math.PI * 2);
+            ctx.fillStyle = '#0f172a';
+            ctx.fill();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, loupeR - 1, 0, Math.PI * 2);
+            ctx.clip();
+
+            let zoom = 2.6;
+            let sw = (loupeR * 2) / zoom;
+            let sh = (loupeR * 2) / zoom;
+            let sx = Math.max(0, Math.min(canvas.width - sw, x - sw / 2));
+            let sy = Math.max(0, Math.min(canvas.height - sh, y - sh / 2));
+            ctx.drawImage(uploadedImage, sx, sy, sw, sh, cx - loupeR, cy - loupeR, loupeR * 2, loupeR * 2);
+            ctx.restore();
+
+            // 4. Industrial Metallic & Skyblue Outer Ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, loupeR, 0, Math.PI * 2);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#0284c7';
+            ctx.stroke();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke();
+
+            // 5. Precision Reticle Crosshair
+            let gap = 9;
+            ctx.beginPath();
+            ctx.moveTo(cx - loupeR + 6, cy); ctx.lineTo(cx - gap, cy);
+            ctx.moveTo(cx + gap, cy); ctx.lineTo(cx + loupeR - 6, cy);
+            ctx.moveTo(cx, cy - loupeR + 6); ctx.lineTo(cx, cy - gap);
+            ctx.moveTo(cx, cy + gap); ctx.lineTo(cx, cy + loupeR - 6);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#000000';
+            ctx.stroke();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = '#38bdf8';
+            ctx.stroke();
+
+            // Hollow center target ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 6. Real-time HUD Color Match Badge (Positioned below or above loupe)
+            let badgeY = cy > y ? cy + loupeR + 10 : cy - loupeR - 34;
+            let badgeW = Math.max(160, loupeR * 2.4);
+            let badgeH = 26;
+            let badgeX = cx - badgeW / 2;
+
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+            ctx.beginPath();
+            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 13);
+            ctx.fill();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // Color Swatch Circle
+            ctx.beginPath();
+            ctx.arc(badgeX + 14, badgeY + badgeH / 2, 6, 0, Math.PI * 2);
+            ctx.fillStyle = sampled.hex;
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Badge Text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            let txt = topMatch ? `${topMatch.id} (${topMatch.similarity}%)` : sampled.hex;
+            ctx.fillText(txt, badgeX + 26, badgeY + badgeH / 2);
+
+            ctx.restore();
         }
 
         // Standardized BOM update function with Inventory Integration
