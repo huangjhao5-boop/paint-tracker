@@ -1,0 +1,15 @@
+{
+  "name": "paint-tracker",
+  "version": "3.0.0",
+  "description": "Visual paint recipe and inventory tracking application for scale model builders",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Build successful'",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Visual Paint Tracker - 塗裝配方管理系統",
+  "description": "模型玩家與塗裝愛好者專用的視覺化模型塗裝配方紀錄、零件視覺標籤、色表庫存與進度管理系統",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
